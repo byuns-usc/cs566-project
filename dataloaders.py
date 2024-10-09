@@ -1,10 +1,12 @@
 import os
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
-from PIL import Image
-import torch
 
-os.chdir('data')
+import torch
+from PIL import Image
+from torch.utils.data import DataLoader, Dataset
+from torchvision import transforms
+
+os.chdir("data")
+
 
 # Image-Mask Dataset Class
 class ImageMaskDataset(Dataset):
@@ -16,10 +18,10 @@ class ImageMaskDataset(Dataset):
         self.transform = transform
         self.mask_transform = mask_transform
         self.image_files = sorted(os.listdir(self.image_dir))
-    
+
     def __len__(self):
         return len(self.image_files)
-    
+
     def __getitem__(self, idx):
         img_name = self.image_files[idx]
         img_path = os.path.join(self.image_dir, img_name)
@@ -30,8 +32,8 @@ class ImageMaskDataset(Dataset):
         mask_name = f"{base_name}{self.mask_suffix}{self.mask_ext}"
         mask_path = os.path.join(self.mask_dir, mask_name)
 
-        image = Image.open(img_path).convert('RGB')
-        mask = Image.open(mask_path).convert('L')  # Convert to grayscale
+        image = Image.open(img_path).convert("RGB")
+        mask = Image.open(mask_path).convert("L")  # Convert to grayscale
 
         if self.transform:
             image = self.transform(image)
@@ -40,41 +42,48 @@ class ImageMaskDataset(Dataset):
 
         return image, mask
 
+
 # Dataloader Creation Function
-def create_dataloader(image_dir, mask_dir, batch_size=8, shuffle=True, transform=None, mask_transform=None, mask_suffix="", mask_ext=".png"):
-    dataset = ImageMaskDataset(image_dir, mask_dir, transform=transform, mask_transform=mask_transform, mask_suffix=mask_suffix, mask_ext=mask_ext)
+def create_dataloader(
+    image_dir,
+    mask_dir,
+    batch_size=8,
+    shuffle=True,
+    transform=None,
+    mask_transform=None,
+    mask_suffix="",
+    mask_ext=".png",
+):
+    dataset = ImageMaskDataset(
+        image_dir,
+        mask_dir,
+        transform=transform,
+        mask_transform=mask_transform,
+        mask_suffix=mask_suffix,
+        mask_ext=mask_ext,
+    )
     return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+
 
 # Set a fixed size for all images and masks
 fixed_size = (360, 640)  # (height, width)
 
 # Transforms for Images and Masks
-transform = transforms.Compose([
-    transforms.Resize(fixed_size),
-    transforms.ToTensor()
-])
+transform = transforms.Compose([transforms.Resize(fixed_size), transforms.ToTensor()])
 
-mask_transform = transforms.Compose([
-    transforms.Resize(fixed_size),
-    transforms.ToTensor()
-])
+mask_transform = transforms.Compose([transforms.Resize(fixed_size), transforms.ToTensor()])
 
 # COCO Dataset
-coco_image_dir = 'coco/images'
-coco_mask_dir = 'coco/masks'
+coco_image_dir = "coco/images"
+coco_mask_dir = "coco/masks"
 
 coco_loader = create_dataloader(
-    coco_image_dir,
-    coco_mask_dir,
-    transform=transform,
-    mask_transform=mask_transform,
-    mask_suffix="",
-    mask_ext=".png"
+    coco_image_dir, coco_mask_dir, transform=transform, mask_transform=mask_transform, mask_suffix="", mask_ext=".png"
 )
 
 # Pascal VOC Dataset
-voc_image_dir = 'voc/images'
-voc_mask_dir = 'voc/masks'
+voc_image_dir = "voc/images"
+voc_mask_dir = "voc/masks"
 
 voc_loader = create_dataloader(
     voc_image_dir,
@@ -82,12 +91,12 @@ voc_loader = create_dataloader(
     transform=transform,
     mask_transform=mask_transform,
     mask_suffix="",  # Mask files have the same base name without extra suffix
-    mask_ext=".png"
+    mask_ext=".png",
 )
 
 # Oxford-IIIT Pet Dataset
-pets_image_dir = 'oxford_pet/images'
-pets_mask_dir = 'oxford_pet/masks'
+pets_image_dir = "oxford_pet/images"
+pets_mask_dir = "oxford_pet/masks"
 
 pets_loader = create_dataloader(
     pets_image_dir,
@@ -95,37 +104,28 @@ pets_loader = create_dataloader(
     transform=transform,
     mask_transform=mask_transform,
     mask_suffix="",  # Mask files have the same base name without extra suffix
-    mask_ext=".png"
+    mask_ext=".png",
 )
 
 # MSD Brain Tumor Dataset
-brain_image_dir = 'msd_brain/images'
-brain_mask_dir = 'msd_brain/masks'
+brain_image_dir = "msd_brain/images"
+brain_mask_dir = "msd_brain/masks"
 
 brain_loader = create_dataloader(
-    brain_image_dir,
-    brain_mask_dir,
-    transform=transform,
-    mask_transform=mask_transform,
-    mask_suffix="",
-    mask_ext=".png"
+    brain_image_dir, brain_mask_dir, transform=transform, mask_transform=mask_transform, mask_suffix="", mask_ext=".png"
 )
 
 # MSD Heart Dataset
-heart_image_dir = 'msd_heart/images'
-heart_mask_dir = 'msd_heart/masks'
+heart_image_dir = "msd_heart/images"
+heart_mask_dir = "msd_heart/masks"
 
 heart_loader = create_dataloader(
-    heart_image_dir,
-    heart_mask_dir,
-    transform=transform,
-    mask_transform=mask_transform,
-    mask_suffix="",
-    mask_ext=".png"
+    heart_image_dir, heart_mask_dir, transform=transform, mask_transform=mask_transform, mask_suffix="", mask_ext=".png"
 )
 
 # Verifying the Dataloader Outputs
-#import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
+
 
 def verify_dataloader(dataloader, name, num_samples=4):
     for images, masks in dataloader:
@@ -138,15 +138,15 @@ def verify_dataloader(dataloader, name, num_samples=4):
         # for i in range(num_samples):
         #     img = images[i].permute(1, 2, 0).numpy()  # Convert from (C, H, W) to (H, W, C)
         #     mask = masks[i].squeeze().numpy()  # Remove channel dimension for mask if any
-            
+
         #     axs[i, 0].imshow(img)
         #     axs[i, 0].set_title('Image')
         #     axs[i, 0].axis('off')
-            
+
         #     axs[i, 1].imshow(mask, cmap='gray')
         #     axs[i, 1].set_title('Mask')
         #     axs[i, 1].axis('off')
-        
+
         # plt.tight_layout()
         # plt.show()
         break  # Only verify the first batch
