@@ -1,0 +1,6 @@
+{
+    "background": [0],
+    "edema": [1],
+    "non-enhancing tumor": [2],
+    "enhancing tumor": [3]
+}
