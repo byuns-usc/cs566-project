@@ -35,6 +35,7 @@ class Conv1DBlock(nn.Module):
         self.relu = nn.ReLU()
 
     def forward(self, x):
+        print(x.size())
         x = self.pad(x)
         x = self.conv(x)
         x = self.relu(x)
@@ -58,7 +59,7 @@ class UpScale1D(nn.Module):
     """
     def __init__(self, scale):
         super(UpScale1D, self).__init__()
-        self.upscale = nn.Upsample(scale_factor=scale)
+        self.upscale = nn.Upsample(scale_factor=scale, mode='linear')
 
     def forward(self, x):
         x = self.upscale(x)

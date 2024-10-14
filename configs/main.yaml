@@ -1,0 +1,26 @@
+model:
+  channel_in: 3
+  num_layers: 5
+  kernel_size: 3
+  pool_kernel_size: 3
+  bottleneck_scale: 1
+  bottleneck_repeat: 5
+
+data:
+  resolution:
+    - 512
+    - 512
+  
+
+train:
+  cuda: true
+  epoch: 1000
+  learning_rate: 0.01
+  lr_step: 500
+  batch_size: 16
+  num_workers: 8
+  loss: smoothl1
+  save_dir: exps
+  load_weights: null
+  load_encoder: null
+  

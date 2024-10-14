@@ -1,8 +1,8 @@
 import os
-
-import numpy as np
+from ruamel.yaml import YAML
 import time
 
+import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
@@ -10,51 +10,43 @@ from torch.utils.data import DataLoader
 
 from tensorboardX import SummaryWriter
 
-from utils import *
-
-import datasets
-import networks
-
+from datasets import datasets
 
 class Trainer:
-    def __init__(self, options):
-        self.opt = options
-        self.log_path = os.path.join(self.opt.log_dir, self.opt.model_name)
+    def __init__(self, opts):
+        self.data_opts = opts['data']
+        self.train_opts = opts['train']
+        self.model_opts = opts['model']
 
-        self.device = torch.device("cpu" if self.opt.no_cuda else "cuda")
+        self.device = torch.device("cuda" if self.train_opts.cuda and torch.cuda.is_available() else "cpu")
+        
+        # TODO Load Data
+        self.dataset = {
+            'coco': datasets.COCO
+        }
+        self.train_dataset
+        self.val_dataset
+        self.train_loader
+        self.val_loader
 
-        self.model_optimizer = optim.Adam(self.parameters_to_train, self.opt.learning_rate)
-        self.model_lr_scheduler = optim.lr_scheduler.StepLR(self.model_optimizer, self.opt.scheduler_step_size, 0.1)
-
-        if self.opt.load_weights_folder is not None:
+        # TODO Define model
+        model = None
+        if self.train_opts['load_weights'] is not None:
             self.load_model()
 
-        train_filenames = ''
-        val_filenames = ''
-        img_ext = '.png' if self.opt.png else '.jpg'
+        # Set training params
+        self.optim = optim.Adam(self.model.parameters(), self.train_opts['learning_rate'])
+        self.lr_scheduler = optim.lr_scheduler.StepLR(self.optim, self.train_opts['lr_step'], 0.1)
 
-        train_dataset = datasets.KITTIRAWDataset(
-            self.opt.data_path, train_filenames, self.opt.height, self.opt.width,
-            self.opt.frame_ids, 4, is_train=True, img_ext=img_ext)
-        self.train_loader = DataLoader(
-            train_dataset, self.opt.batch_size, True,
-            num_workers=self.opt.num_workers, pin_memory=True, drop_last=True)
-        val_dataset = datasets.KITTIRAWDataset(
-            self.opt.data_path, val_filenames, self.opt.height, self.opt.width,
-            self.opt.frame_ids, 4, is_train=False, img_ext=img_ext)
-        self.val_loader = DataLoader(
-            val_dataset, self.opt.batch_size, True,
-            num_workers=self.opt.num_workers, pin_memory=True, drop_last=True)
-        self.val_iter = iter(self.val_loader)
-
-        self.writers = {}
-        for mode in ["train", "val"]:
-            self.writers[mode] = SummaryWriter(os.path.join(self.log_path, mode))
-
-        self.save_opts()
+        # Make dir and save options used
+        self.save_dir = os.path.join(self.train_opts['save_dir'], str(int(time.time())))
+        os.makedirs(self.save_dir)
+        with open(os.path.join(self.save_dir, 'config.yaml'), 'wb') as f:
+            yaml = YAML()
+            yaml.dump(opts, f)
 
     def train(self):
-        self.set_train()
+        self.model.train()
 
         for self.epoch in range(self.opt.num_epochs):
             self.model_lr_scheduler.step()
@@ -72,7 +64,8 @@ class Trainer:
                 self.save_model()
 
     def val(self):
-        self.set_eval()
+        self.model.eval()
+        
         try:
             inputs = self.val_iter.next()
         except StopIteration:
@@ -83,7 +76,7 @@ class Trainer:
             outputs, losses = self.process_batch(inputs)
             del inputs, outputs, losses
 
-        self.set_train()
+        self.model.train()
 
     def compute_losses(self, inputs, outputs):
         """Compute the reprojection and smoothness losses for a minibatch
