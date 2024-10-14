@@ -6,7 +6,7 @@ Many modern computer vision architectures leverage `diffusion` for its ease of f
 This repository contains code base for project titled __`SegOne: Reinventing Text-Based Image Semantic Segmentation with Only 1D Channel Convolutions`__ developed during the `CSCI 566: Deep Learning & Applications` course, Fall 2024, at the `University of Southern California` (USC).
 
 ## Authors
-1. [Sanghyun Byun](https://github.com/) | `MS in Computer Science` | `USC`
+1. [Sanghyun Byun](https://shbyun080.github.io/) | `MS in Computer Science` | `USC`
 3. [Kayvan Shah](https://github.com/KayvanShah1) | `MS in Applied Data Science` | `USC`
 2. [Ayushi Gang](https://github.com/) | `MS in Computer Science` | `USC`
 4. [Chistopher Anton](https://github.com/) | `MS in Computer Science` | `USC`
