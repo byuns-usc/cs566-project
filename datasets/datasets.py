@@ -117,9 +117,22 @@ def download_and_extract(url, zip_path, extract_dir):
                 for chunk in r.iter_content(chunk_size=8192):
                     f.write(chunk)
         print(f"Extracting {zip_path} to {extract_dir}...")
+
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall(extract_dir)
-        print(f"Downloaded and extracted to {extract_dir}.")
+            # Manually extract files and place them directly in the images folder
+            for member in zip_ref.namelist():
+                # We are specifically looking for files under the 'test2017/' subfolder
+                if member.startswith("test2017/") and not member.endswith('/'):
+                    # Strip the 'test2017/' part of the path
+                    filename = os.path.basename(member)
+                    # Define where to place the extracted files
+                    extracted_path = os.path.join(extract_dir, filename)
+                    
+                    # Open the source file from the zip and write it to the destination
+                    with zip_ref.open(member) as source_file:
+                        with open(extracted_path, "wb") as output_file:
+                            output_file.write(source_file.read())
+        print(f"Successfully extracted files to {extract_dir} without 'test2017' subfolder.")
     else:
         print(f"{zip_path} already exists.")
 
@@ -144,19 +157,22 @@ def COCO():
         coco_data = json.load(f)
 
     # Create a mapping from category ID to a random color, and also save the category names
+    label_mapping = {}
     category_id_to_color = {}
     categories = coco_data['categories']
     for category in categories:
         category_id = category['id']
         category_name = category['name']
+        rgb_color = [random.randint(0, 255) for _ in range(3)]
         category_id_to_color[category_id] = {
             'name': category_name,
-            'color': tuple([random.randint(0, 255) for _ in range(3)])
+            'color': tuple(rgb_color)
         }
-
+        label_mapping[category_name] = rgb_color
+    
     # Save the label mappings with category names and colors
-    save_label_mappings('coco/train/masks', category_id_to_color, 'TRAIN')
-    save_label_mappings('coco/val/masks', category_id_to_color, 'VAL')
+    save_label_mappings('coco/train/masks', label_mapping, 'Train')
+    save_label_mappings('coco/val/masks', label_mapping, 'Val')
 
     # Ensure the same mapping is used for both train and val
     process_coco_split('train', category_id_to_color, sample_limit=10)
@@ -239,8 +255,8 @@ def VOC():
         label_mapping[class_names[class_id]] = class_to_color[class_id]
 
     # Save the label mapping as a JSON file in the masks folder for train and val
-    save_label_mappings(train_output_dir_masks, label_mapping, "TRAIN")
-    save_label_mappings(val_output_dir_masks, label_mapping, "VAL")
+    save_label_mappings(train_output_dir_masks, label_mapping, "Train")
+    save_label_mappings(val_output_dir_masks, label_mapping, "Val")
     print("VOC labels stored.")
 
 def process_pet_split(pet_dataset, class_names, class_to_color, output_dir_images, output_dir_masks, split_name, sample_limit=10):
@@ -314,7 +330,7 @@ def PET():
 
     # Store label-to-mask-value mapping for trainval
     label_mapping = {class_names[class_id]: class_to_color[class_id] for class_id in class_to_color}
-    save_label_mappings(trainval_output_dir_masks, label_mapping, "PET")
+    save_label_mappings(trainval_output_dir_masks, label_mapping, "Train")
     print("Oxford-IIIT Pet labels stored.")
 
     # Process test set (only images)
@@ -449,7 +465,7 @@ def HEART():
     }
 
     # Save the label mapping as a JSON file inside the train/masks folder
-    save_label_mappings(output_dir_train_masks, MASK_LABELS_HEART, "HEART")
+    save_label_mappings(output_dir_train_masks, MASK_LABELS_HEART, "Train")
     print("MSD Heart labels.")
 
 def process_brain_train(image_paths, mask_paths, output_dir_train_images, output_dir_train_masks):
@@ -575,7 +591,7 @@ def BRAIN():
     }
 
     # Save the label mapping as a JSON file inside the train/masks folder
-    save_label_mappings(output_dir_train_masks, MASK_LABELS_BRAIN, "BRAIN")
+    save_label_mappings(output_dir_train_masks, MASK_LABELS_BRAIN, "Train")
     print("MSD Brain labels.")
 
 def main():
