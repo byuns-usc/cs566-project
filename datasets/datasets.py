@@ -1,148 +1,203 @@
 import os
 import requests
+import zipfile
 import json
 import numpy as np
 from PIL import Image, ImageDraw
 import random
-from torchvision import datasets
 import torchvision.transforms as T
+import torchvision.datasets as datasets
 import tarfile
 import nibabel as nib
 
+# download and save images based on file name from COCO
+def download_image(img_filename, output_dir_images, split):
+    img_url = f"http://images.cocodataset.org/{split}2017/{img_filename}"
+    img_path = os.path.join(output_dir_images, img_filename)
+    img_data = requests.get(img_url).content
+    with open(img_path, 'wb') as f:
+        f.write(img_data)
+
 # Save label mappings to a JSON file
-def save_label_mappings(mask_dir, label_mapping, dataset_name):
-    # Construct the path for the label mapping JSON file
+def save_label_mappings(mask_dir, category_mapping, dataset_name):
     label_mapping_path = os.path.join(mask_dir, f"{dataset_name}_label_mapping.json")
-    
-    # Convert tuple keys (colors) to strings
-    label_mapping_str_keys = {str(key): value for key, value in label_mapping.items()}
-    
-    # Save the label mapping as a JSON file
     with open(label_mapping_path, 'w') as json_file:
-        json.dump(label_mapping_str_keys, json_file, indent=4)
+        json.dump(category_mapping, json_file, indent=4)
 
-####COCO####
-def COCO():
-    # Output directories for images and masks
-    output_dir_images = 'coco/images'
-    output_dir_masks = 'coco/masks'
+# create masks for each image using COCO annotations
+def create_masks(image_info, annotations, category_id_to_color, output_dir_masks):
+    image_id = image_info['id']
+    width, height = image_info['width'], image_info['height']
+    
+    # empty mask 
+    mask_image = Image.new('RGB', (width, height), (0, 0, 0))
+    
+    # Process annotations 
+    if image_id in annotations:
+        for annotation in annotations[image_id]:
+            segmentation = annotation['segmentation']
+            category_id = annotation['category_id']
+            color = category_id_to_color[category_id]['color']  # Use the color assigned to the category
 
-    # Create output directories if they don't exist
+            # Check if the segmentation is a list 
+            if isinstance(segmentation, list):
+                for polygon in segmentation:
+                    # Convert polygon points to a 2D array and draw it
+                    poly = np.array(polygon).reshape((len(polygon) // 2, 2))
+                    ImageDraw.Draw(mask_image).polygon(poly.flatten().tolist(), outline=color, fill=color)
+
+    # Save the mask
+    mask_path = os.path.join(output_dir_masks, f'{image_id:012d}.png')
+    mask_image.save(mask_path)
+
+# process a single COCO split
+def process_coco_split(split, category_id_to_color, sample_limit=10):
+    output_dir_images = f'coco/{split}/images'
+    output_dir_masks = f'coco/{split}/masks'
+    
+    if split != 'test':
+        os.makedirs(output_dir_masks, exist_ok=True)
+
     os.makedirs(output_dir_images, exist_ok=True)
-    os.makedirs(output_dir_masks, exist_ok=True)
 
-    # Download the COCO annotations file
+    if split != 'test':
+        annotations_url = "http://images.cocodataset.org/annotations/annotations_trainval2017.zip"
+        annotations_zip_path = 'annotations.zip'
+        annotations_dir = 'annotations'
+
+        # Download and extract annotations if not already present
+        if not os.path.exists(annotations_zip_path):
+            print("Downloading annotations...")
+            annotations_data = requests.get(annotations_url)
+            with open(annotations_zip_path, 'wb') as f:
+                f.write(annotations_data.content)
+            print("Annotations downloaded.")
+            with zipfile.ZipFile(annotations_zip_path, 'r') as zip_ref:
+                zip_ref.extractall(annotations_dir)
+
+        # Load the appropriate annotation file for train or val
+        annotations_file = os.path.join(annotations_dir, 'annotations', f'instances_{split}2017.json')
+        with open(annotations_file, 'r') as f:
+            coco_data = json.load(f)
+
+        # Get the first 10 image data entries
+        images_data = coco_data['images'][:sample_limit]
+
+        # Create a mapping from image_id to annotation data
+        image_id_to_annotations = {}
+        for annotation in coco_data['annotations']:
+            image_id = annotation['image_id']
+            if image_id not in image_id_to_annotations:
+                image_id_to_annotations[image_id] = []
+            image_id_to_annotations[image_id].append(annotation)
+
+        # Download images and create masks
+        for image_info in images_data:
+            img_filename = image_info['file_name']
+            download_image(img_filename, output_dir_images, split)
+            create_masks(image_info, image_id_to_annotations, category_id_to_color, output_dir_masks)
+
+    # For test split, only download images 
+    else:
+        print(f"Processing {split} split.")
+        test_images_url = f"http://images.cocodataset.org/zips/{split}2017.zip"
+        test_zip_path = f"{split}2017.zip"
+
+        # Download test images
+        download_and_extract(test_images_url, test_zip_path, output_dir_images)
+        print(f"Downloaded test images for {split} split.")
+
+# Utility to download and extract large zip files in chunks
+def download_and_extract(url, zip_path, extract_dir):
+    if not os.path.exists(zip_path):
+        print(f"Downloading from {url}...")
+        with requests.get(url, stream=True) as r:
+            r.raise_for_status()
+            with open(zip_path, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    f.write(chunk)
+        print(f"Extracting {zip_path} to {extract_dir}...")
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(extract_dir)
+        print(f"Downloaded and extracted to {extract_dir}.")
+    else:
+        print(f"{zip_path} already exists.")
+
+def COCO():
+    # Load annotations once for both train and val splits to ensure consistent colors and save category labels
     annotations_url = "http://images.cocodataset.org/annotations/annotations_trainval2017.zip"
     annotations_zip_path = 'annotations.zip'
     annotations_dir = 'annotations'
 
-    # Download and extract annotations if not already present
     if not os.path.exists(annotations_zip_path):
         print("Downloading annotations...")
         annotations_data = requests.get(annotations_url)
         with open(annotations_zip_path, 'wb') as f:
             f.write(annotations_data.content)
         print("Annotations downloaded.")
-
-        import zipfile
         with zipfile.ZipFile(annotations_zip_path, 'r') as zip_ref:
             zip_ref.extractall(annotations_dir)
 
-    # Set the path to the extracted annotations file
+    # Load the annotations to create a global category-to-color mapping
     annotations_file = os.path.join(annotations_dir, 'annotations', 'instances_train2017.json')
-
-    # Load the annotations file
     with open(annotations_file, 'r') as f:
         coco_data = json.load(f)
 
-    # Get the first 10 image data entries
-    ##### CHANGE THIS WHEN TRAINING
-    images_data = coco_data['images'][:10]
-
-    # Create a mapping from image_id to annotation data
-    image_id_to_annotations = {}
-    for annotation in coco_data['annotations']:
-        image_id = annotation['image_id']
-        if image_id not in image_id_to_annotations:
-            image_id_to_annotations[image_id] = []
-        image_id_to_annotations[image_id].append(annotation)
-
-    # Create a mapping from category ID to a random color
+    # Create a mapping from category ID to a random color, and also save the category names
     category_id_to_color = {}
     categories = coco_data['categories']
     for category in categories:
         category_id = category['id']
-        # Assign a random RGB color to each category
-        category_id_to_color[category_id] = tuple([random.randint(0, 255) for _ in range(3)])
+        category_name = category['name']
+        category_id_to_color[category_id] = {
+            'name': category_name,
+            'color': tuple([random.randint(0, 255) for _ in range(3)])
+        }
 
-    # Download images and create colored masks
-    for image_info in images_data:
-        image_id = image_info['id']
-        img_filename = image_info['file_name']
-        img_height = image_info['height']
-        img_width = image_info['width']
-        
-        # Download the image and save it
-        img_url = f"http://images.cocodataset.org/train2017/{img_filename}"
-        img_path = os.path.join(output_dir_images, img_filename)
-        img_data = requests.get(img_url).content
-        with open(img_path, 'wb') as f:
-            f.write(img_data)
-        
-        # Create a blank RGB mask
-        mask = Image.new('RGB', (img_width, img_height), (0, 0, 0))
-        
-        # Draw the polygons on the mask
-        annotations = image_id_to_annotations.get(image_id, [])
-        for annotation in annotations:
-            segmentation = annotation['segmentation']
-            category_id = annotation['category_id']
-            color = category_id_to_color[category_id]  # Get color for the category
-            
-            if isinstance(segmentation, list):  # Ensure it's a list of polygons
-                for polygon in segmentation:
-                    # Convert the polygon points into a format suitable for drawing
-                    poly = np.array(polygon).reshape((len(polygon) // 2, 2))
-                    # Draw the polygon as a filled area with its category color
-                    ImageDraw.Draw(mask).polygon(poly.flatten().tolist(), outline=color, fill=color)
-        
-        # Save the mask as a PNG file
-        mask_path = os.path.join(output_dir_masks, f"{os.path.splitext(img_filename)[0]}.png")
-        mask.save(mask_path)
+    # Save the label mappings with category names and colors
+    save_label_mappings('coco/train/masks', category_id_to_color, 'TRAIN')
+    save_label_mappings('coco/val/masks', category_id_to_color, 'VAL')
 
-    print("Images and colored masks have been downloaded and saved!")
+    # Ensure the same mapping is used for both train and val
+    process_coco_split('train', category_id_to_color, sample_limit=10)
+    process_coco_split('val', category_id_to_color, sample_limit=10)
+    process_coco_split('test', category_id_to_color, sample_limit=10)
 
-    # Create a mapping from category ID to category name for quick lookup
-    category_id_to_name = {category['id']: category['name'] for category in coco_data['categories']}
-
-    # Store label-to-mask-value mapping for COCO
-    label_mapping = {}
-
-    for category_id, color in category_id_to_color.items():
-        # Check if the category_id exists in the category_id_to_name mapping
-        if category_id in category_id_to_name:
-            label_mapping[category_id_to_name[category_id]] = list(color)
-        else:
-            print(f"Warning: category_id {category_id} not found in COCO categories")
-
-    # Save the label mapping as a JSON file in the masks folder
-    save_label_mappings(output_dir_masks, label_mapping, "COCO")
-    print("COCO labels stored.")
-
-#####VOC####
-def VOC():
-    # Output directories for images and masks
-    output_dir_images = 'voc/images'
-    output_dir_masks = 'voc/masks'
-
-    # Create output directories if they don't exist
+# process a single VOC split
+def process_voc_split(voc_dataset, class_names, class_to_color, output_dir_images, output_dir_masks, split_name, sample_limit=10):
     os.makedirs(output_dir_images, exist_ok=True)
     os.makedirs(output_dir_masks, exist_ok=True)
 
-    # Download Pascal VOC dataset (train set) - selecting only 10 samples
-    voc_dataset = datasets.VOCSegmentation(root='./data', year='2012', image_set='train', download=True, transform=T.ToTensor())
+    for idx in range(sample_limit):
+        # Get the image and mask pair
+        img, mask = voc_dataset[idx]
+        
+        # Save the image
+        img = T.ToPILImage()(img)
+        img_path = os.path.join(output_dir_images, f'{split_name}_{idx}.jpg')
+        img.save(img_path)
+        
+        # Prepare mask for coloring
+        mask_array = np.array(mask)
+        colored_mask = Image.new('RGB', mask_array.shape[::-1], (0, 0, 0))
+        
+        # Draw colors for each class
+        for class_id, color in class_to_color.items():
+            # Create a binary mask for the class and apply the color
+            class_mask = (mask_array == class_id)
+            ImageDraw.Draw(colored_mask).bitmap((0, 0), Image.fromarray(class_mask.astype('uint8') * 255), fill=color)
+        
+        # Save the colored mask
+        mask_path = os.path.join(output_dir_masks, f'{split_name}_{idx}.png')
+        colored_mask.save(mask_path)
 
-    # Pascal VOC has 21 classes (including background)
+    print(f"{split_name.capitalize()} PASCAL VOC images and colored masks have been saved!")
+
+def VOC():
+    # Output directories for images and masks for all sets
+    base_dir = 'voc'
+    os.makedirs(base_dir, exist_ok=True)
+
     class_names = [
         "background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus",
         "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike",
@@ -152,120 +207,208 @@ def VOC():
     # Assign a random color to each class
     class_to_color = {cls_id: tuple([random.randint(0, 255) for _ in range(3)]) for cls_id in range(len(class_names))}
 
-    # Process the first 10 samples only
-    #### CHANGE THIS WHILE TRAINING
-    # len(voc_dataset)
-    for idx in range(10):
-        # Get the image and mask pair
-        img, mask = voc_dataset[idx]
-        
-        # Save the image
+    # Process Train Set
+    train_output_dir_images = os.path.join(base_dir, 'train/images')
+    train_output_dir_masks = os.path.join(base_dir, 'train/masks')
+    train_dataset = datasets.VOCSegmentation(root='./data', year='2012', image_set='train', download=True, transform=T.ToTensor())
+    process_voc_split(train_dataset, class_names, class_to_color, train_output_dir_images, train_output_dir_masks, 'train')
+
+    # Process Val Set
+    val_output_dir_images = os.path.join(base_dir, 'val/images')
+    val_output_dir_masks = os.path.join(base_dir, 'val/masks')
+    val_dataset = datasets.VOCSegmentation(root='./data', year='2012', image_set='val', download=True, transform=T.ToTensor())
+    process_voc_split(val_dataset, class_names, class_to_color, val_output_dir_images, val_output_dir_masks, 'val')
+
+    # Process Test Set - no masks here
+    test_output_dir_images = os.path.join(base_dir, 'test/images')
+    os.makedirs(test_output_dir_images, exist_ok=True)
+    test_dataset = datasets.VOCSegmentation(root='./data', year='2012', image_set='val', download=False, transform=T.ToTensor())
+    
+    # For test, only save images 
+    for idx in range(10):  # Same sample limit
+        img, _ = test_dataset[idx]  # No mask for the test set
         img = T.ToPILImage()(img)
-        img_path = os.path.join(output_dir_images, f'{idx}.jpg')
+        img_path = os.path.join(test_output_dir_images, f'test_{idx}.jpg')
         img.save(img_path)
-        
+
+    print("Test PASCAL VOC images have been saved.")
+
+    # Store label-to-mask-value mapping for VOC
+    label_mapping = {}
+    for class_id in class_to_color:
+        label_mapping[class_names[class_id]] = class_to_color[class_id]
+
+    # Save the label mapping as a JSON file in the masks folder for train and val
+    save_label_mappings(train_output_dir_masks, label_mapping, "TRAIN")
+    save_label_mappings(val_output_dir_masks, label_mapping, "VAL")
+    print("VOC labels stored.")
+
+def process_pet_split(pet_dataset, class_names, class_to_color, output_dir_images, output_dir_masks, split_name, sample_limit=10):
+    os.makedirs(output_dir_images, exist_ok=True)
+    os.makedirs(output_dir_masks, exist_ok=True)
+
+    # Process the first `sample_limit` samples
+    for idx in range(sample_limit):
+        # Get the image and segmentation mask pair
+        img, mask = pet_dataset[idx]
+
+        # Save the image
+        img_path = os.path.join(output_dir_images, f'{split_name}_{idx}.jpg')
+        img.save(img_path)
+
         # Prepare mask for coloring
         mask_array = np.array(mask)
         colored_mask = Image.new('RGB', mask_array.shape[::-1], (0, 0, 0))
-        
+
         # Draw colors for each class
         for class_id, color in class_to_color.items():
             # Create a binary mask for the class and apply the color
             class_mask = (mask_array == class_id)
             ImageDraw.Draw(colored_mask).bitmap((0, 0), Image.fromarray(class_mask.astype('uint8') * 255), fill=color)
-        
+
         # Save the colored mask
-        mask_path = os.path.join(output_dir_masks, f'{idx}.png')
+        mask_path = os.path.join(output_dir_masks, f'{split_name}_{idx}.png')
         colored_mask.save(mask_path)
 
-    print("Pascal VOC images and colored masks have been saved!")
+    print(f"{split_name.capitalize()} Oxford-IIIT Pet images and colored masks have been saved!")
 
-    # Store label-to-mask-value mapping for COCO
-    label_mapping = {}
-
-    for class_id in class_to_color:
-        label_mapping[class_names[class_id]] = class_to_color[class_id]
-
-    # Save the label mapping as a JSON file in the masks folder
-    save_label_mappings(output_dir_masks, label_mapping, "VOC")
-    print("VOC labels stored.")
-
-####OXFORD PET###
-def PET():
-
-    # Output directories for images and masks
-    output_dir_images = 'oxford_pet/images'
-    output_dir_masks = 'oxford_pet/masks'
-
-    # Create output directories if they don't exist
+# Function to process the Oxford-IIIT Pet test set (only images)
+def process_pet_test(pet_dataset, output_dir_images, sample_limit=10):
     os.makedirs(output_dir_images, exist_ok=True)
-    os.makedirs(output_dir_masks, exist_ok=True)
 
-    # Download the Oxford-IIIT Pet Dataset (only 10 samples for testing)
-    oxford_pet_dataset = datasets.OxfordIIITPet(
+    # Process the first `sample_limit` test samples
+    for idx in range(sample_limit):
+        # Get the image (no mask in test set)
+        img, _ = pet_dataset[idx]
+
+        # Save the image
+        img_path = os.path.join(output_dir_images, f'test_{idx}.jpg')
+        img.save(img_path)
+
+    print(f"Test Oxford-IIIT Pet images have been saved!")
+
+# Main function to handle the Oxford-IIIT Pet dataset (trainval + test)
+def PET():
+    # Output directories for images and masks
+    base_dir = 'oxford_pet'
+    os.makedirs(base_dir, exist_ok=True)
+
+    # Class names for Oxford-IIIT Pet segmentation (Background, Pet, Foreground)
+    class_names = ['Background', 'Pet', 'Foreground']
+
+    # Assign random colors for each class
+    class_to_color = {cls_id: tuple([random.randint(0, 255) for _ in range(3)]) for cls_id in range(len(class_names))}
+
+    # Output directories for images and masks for trainval split
+    trainval_output_dir_images = os.path.join(base_dir, 'trainval/images')
+    trainval_output_dir_masks = os.path.join(base_dir, 'trainval/masks')
+
+    # Download and process the Oxford-IIIT Pet trainval dataset
+    pet_trainval_dataset = datasets.OxfordIIITPet(
         root='./data',
         split='trainval',  # train + validation split
         target_types='segmentation',
         download=True
     )
+    process_pet_split(pet_trainval_dataset, class_names, class_to_color, trainval_output_dir_images, trainval_output_dir_masks, 'trainval')
 
-    # Assign random colors for visualization of masks
-    class_to_color = {cls_id: tuple([random.randint(0, 255) for _ in range(3)]) for cls_id in range(3)}
+    # Store label-to-mask-value mapping for trainval
+    label_mapping = {class_names[class_id]: class_to_color[class_id] for class_id in class_to_color}
+    save_label_mappings(trainval_output_dir_masks, label_mapping, "PET")
+    print("Oxford-IIIT Pet labels stored.")
 
-    # Process only 10 samples
-    #### CHANGE - len(oxford_pet_dataset)
-    for idx in range(10):
-        # Get the image and segmentation mask pair
-        img, mask = oxford_pet_dataset[idx]
+    # Process test set (only images)
+    test_output_dir_images = os.path.join(base_dir, 'test/images')
+    pet_test_dataset = datasets.OxfordIIITPet(
+        root='./data',
+        split='test',  # test split
+        target_types='segmentation',
+        download=True
+    )
+    process_pet_test(pet_test_dataset, test_output_dir_images)
+
+def process_heart_train(image_paths, mask_paths, output_dir_train_images, output_dir_train_masks):
+    os.makedirs(output_dir_train_images, exist_ok=True)
+    os.makedirs(output_dir_train_masks, exist_ok=True)
+
+    # Process each image and mask pair
+    for idx, (img_path, mask_path) in enumerate(zip(image_paths, mask_paths)):
+        # Load the image and mask
+        img_nifti = nib.load(img_path)
+        mask_nifti = nib.load(mask_path)
         
-        # Save the image
-        img_path = os.path.join(output_dir_images, f'{idx}.jpg')
-        img.save(img_path)
+        img_data = img_nifti.get_fdata()
+        mask_data = mask_nifti.get_fdata()
+
+        # Extract the middle 50% slices
+        lower_bound = int(img_data.shape[2] * 0.25)
+        upper_bound = int(img_data.shape[2] * 0.75)
+
+        for slice_idx in range(lower_bound, upper_bound):
+            img_slice = img_data[:, :, slice_idx]
+            mask_slice = mask_data[:, :, slice_idx]
+
+            # Normalize image slice and convert to PIL
+            img_normalized = (img_slice - img_slice.min()) / (img_slice.max() - img_slice.min()) * 255
+            img_normalized = img_normalized.astype(np.uint8)
+            img_pil = Image.fromarray(img_normalized)
+
+            # Save the image and corresponding mask in the respective directories
+            img_pil.save(os.path.join(output_dir_train_images, f'train_{idx}_{slice_idx}.jpg'))
+            mask_pil = Image.fromarray(mask_slice.astype(np.uint8) * 85)  # Scale mask values (0-3) to (0-255)
+            mask_pil.save(os.path.join(output_dir_train_masks, f'train_{idx}_{slice_idx}.png'))
+
+    print("MSD Heart train MRI images and masks (mid 50% slices) have been saved!")
+
+# Function to process the MSD Heart test set (use all slices, includes masks if available)
+def process_heart_test(image_paths, mask_paths, output_dir_test_images, output_dir_test_masks):
+    os.makedirs(output_dir_test_images, exist_ok=True)
+    os.makedirs(output_dir_test_masks, exist_ok=True)
+
+    # Process each image and mask pair
+    for idx, (img_path, mask_path) in enumerate(zip(image_paths, mask_paths)):
+        # Load the image and mask
+        img_nifti = nib.load(img_path)
+        mask_nifti = nib.load(mask_path)
         
-        # Prepare mask for coloring
-        mask_array = np.array(mask)
-        colored_mask = Image.new('RGB', mask_array.shape[::-1], (0, 0, 0))
-        
-        # Draw colors for each class
-        for class_id, color in class_to_color.items():
-            # Create a binary mask for the class and apply the color
-            class_mask = (mask_array == class_id)
-            ImageDraw.Draw(colored_mask).bitmap((0, 0), Image.fromarray(class_mask.astype('uint8') * 255), fill=color)
-        
-        # Save the colored mask
-        mask_path = os.path.join(output_dir_masks, f'{idx}.png')
-        colored_mask.save(mask_path)
+        img_data = img_nifti.get_fdata()
+        mask_data = mask_nifti.get_fdata()
 
-    print("Oxford-IIIT Pet images and colored masks have been saved!")
+        # Process all slices
+        for slice_idx in range(img_data.shape[2]):
+            img_slice = img_data[:, :, slice_idx]
+            mask_slice = mask_data[:, :, slice_idx]
 
-    # Store label-to-mask-value mapping for COCO
-    label_mapping = {}
+            # Normalize image slice and convert to PIL
+            img_normalized = (img_slice - img_slice.min()) / (img_slice.max() - img_slice.min()) * 255
+            img_normalized = img_normalized.astype(np.uint8)
+            img_pil = Image.fromarray(img_normalized)
 
-    class_names = ['Background', 'Pet', 'Foreground']
-    for class_id in class_to_color:
-        label_mapping[class_names[class_id]] = class_to_color[class_id]
+            # Save the image and corresponding mask in the respective directories
+            img_pil.save(os.path.join(output_dir_test_images, f'test_{idx}_{slice_idx}.jpg'))
+            mask_pil = Image.fromarray(mask_slice.astype(np.uint8) * 85)  # Scale mask values (0-3) to (0-255)
+            mask_pil.save(os.path.join(output_dir_test_masks, f'test_{idx}_{slice_idx}.png'))
 
-    # Save the label mapping as a JSON file in the masks folder
-    save_label_mappings(output_dir_masks, label_mapping, "PET")
-    print("PET labels stored.")
+    print("MSD Heart test MRI images and masks (all slices) have been saved!")
 
-#####HEART#####
+# Main function to handle the MSD Heart dataset (train + test)
 def HEART():
+    # Output directories for train and test data
+    base_dir = 'msd_heart'
+    output_dir_train_images = os.path.join(base_dir, 'train', 'images')
+    output_dir_train_masks = os.path.join(base_dir, 'train', 'masks')
+    output_dir_test_images = os.path.join(base_dir, 'test', 'images')
+    output_dir_test_masks = os.path.join(base_dir, 'test', 'masks')
+    output_dir_nifti = os.path.join(base_dir, 'nifti')
 
-    # Output directories for images and masks
-    output_dir_images = 'msd_heart/images'
-    output_dir_masks = 'msd_heart/masks'
-    output_dir_nifti = 'msd_heart/nifti'
-
-    # Create output directories if they don't exist
-    os.makedirs(output_dir_images, exist_ok=True)
-    os.makedirs(output_dir_masks, exist_ok=True)
+    os.makedirs(output_dir_train_images, exist_ok=True)
+    os.makedirs(output_dir_train_masks, exist_ok=True)
+    os.makedirs(output_dir_test_images, exist_ok=True)
+    os.makedirs(output_dir_test_masks, exist_ok=True)
     os.makedirs(output_dir_nifti, exist_ok=True)
 
     # MSD Heart Segmentation dataset URL
     msd_heart_url = 'https://msd-for-monai.s3-us-west-2.amazonaws.com/Task02_Heart.tar'
-
-    # Download path for the dataset
     msd_tar_path = 'Task02_Heart.tar'
 
     # Download the dataset if not already present
@@ -286,11 +429,34 @@ def HEART():
     image_dir = os.path.join(output_dir_nifti, 'Task02_Heart', 'imagesTr')
     mask_dir = os.path.join(output_dir_nifti, 'Task02_Heart', 'labelsTr')
 
-    ### CHANGE remove [:1]
+    # Filter out hidden files and other system files
     image_paths = sorted([os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith('.nii.gz') and not f.startswith('._')])[:1]
     mask_paths = sorted([os.path.join(mask_dir, f) for f in os.listdir(mask_dir) if f.endswith('.nii.gz') and not f.startswith('._')])[:1]
 
-    # Process and save the first 10 samples
+    # Process the train set (mid 50% slices)
+    process_heart_train(image_paths, mask_paths, output_dir_train_images, output_dir_train_masks)
+
+    # Process the test set (all slices, includes masks)
+    process_heart_test(image_paths, mask_paths, output_dir_test_images, output_dir_test_masks)
+
+    # Store label-to-mask-value mapping for MSD Heart
+    # Scale mask values (0-3) to (0-255)
+    MASK_LABELS_HEART = {
+        "background": [0 * 85],
+        "left ventricle": [1 * 85],
+        "myocardium": [2 * 85],
+        "right ventricle": [3 * 85]
+    }
+
+    # Save the label mapping as a JSON file inside the train/masks folder
+    save_label_mappings(output_dir_train_masks, MASK_LABELS_HEART, "HEART")
+    print("MSD Heart labels.")
+
+def process_brain_train(image_paths, mask_paths, output_dir_train_images, output_dir_train_masks):
+    os.makedirs(output_dir_train_images, exist_ok=True)
+    os.makedirs(output_dir_train_masks, exist_ok=True)
+
+    # Process each image and mask pair
     for idx, (img_path, mask_path) in enumerate(zip(image_paths, mask_paths)):
         # Load the image and mask
         img_nifti = nib.load(img_path)
@@ -298,57 +464,76 @@ def HEART():
         
         img_data = img_nifti.get_fdata()
         mask_data = mask_nifti.get_fdata()
-        
-        lower_bound = int(img_data.shape[2] * 0.25)
-        upper_bound = int(img_data.shape[2] * 0.75)
 
-        for slice_idx in range(img_data.shape[2]):
-            # Extract the middle slices from 3D volume
-            if lower_bound <= slice_idx <= upper_bound:
-                img_slice = img_data[:, :, slice_idx]
-                mask_slice = mask_data[:, :, slice_idx]
-                
-                # Normalize image slice and convert to PIL
-                img_normalized = (img_slice - img_slice.min()) / (img_slice.max() - img_slice.min()) * 255
-                img_normalized = img_normalized.astype(np.uint8)
-                img_pil = Image.fromarray(img_normalized)
-                
-                # Save the image
-                img_pil.save(os.path.join(output_dir_images, f'{idx}_{slice_idx}.jpg'))
-                
-                # Save the mask
-                mask_pil = Image.fromarray(mask_slice.astype(np.uint8) * 255)
-                mask_pil.save(os.path.join(output_dir_masks, f'{idx}_{slice_idx}.png'))
+        # Calculate the middle 50% range of slices
+        num_slices = img_data.shape[2]
+        lower_bound = int(num_slices * 0.25)
+        upper_bound = int(num_slices * 0.75)
 
-    print("MSD Heart MRI images and masks have been saved!")
+        # Process only the middle 50% of slices
+        for slice_idx in range(lower_bound, upper_bound):
+            img_slice = img_data[:, :, slice_idx]
+            mask_slice = mask_data[:, :, slice_idx]
 
-    MASK_LABELS_HEART = {
-    "background": [0],
-    'left ventricle': [1],
-    'myocardium' : [2],
-    'right ventricle' : [3]
-    }
+            # Normalize image slice and convert to PIL
+            img_normalized = (img_slice - img_slice.min()) / (img_slice.max() - img_slice.min()) * 255
+            img_normalized = img_normalized.astype(np.uint8)
+            img_pil = Image.fromarray(img_normalized)
 
-    # Save the label mapping as a JSON file in the masks folder
-    save_label_mappings(output_dir_masks, MASK_LABELS_HEART, "HEART")
-    print("HEART labels stored.")
+            # Scale mask values to [0, 255]
+            if mask_slice.max() > 0:
+                mask_enhanced = (mask_slice * (255 / mask_slice.max())).astype(np.uint8)
+            else:
+                mask_enhanced = mask_slice.astype(np.uint8)
 
-######BRAIN######
+            # Save the image and corresponding mask in the train directory
+            img_pil.save(os.path.join(output_dir_train_images, f'train_{idx}_{slice_idx}.png'))
+            mask_pil = Image.fromarray(mask_enhanced)
+            mask_pil.save(os.path.join(output_dir_train_masks, f'train_{idx}_{slice_idx}.png'))
+
+    print("MSD Brain train MRI images and masks (mid 50% slices) have been saved!")
+
+# Function to process the MSD Brain test set (images only)
+def process_brain_test(image_paths, output_dir_test_images):
+    os.makedirs(output_dir_test_images, exist_ok=True)
+
+    # Process each image (no masks for test set)
+    for idx, img_path in enumerate(image_paths):
+        # Load the image
+        img_nifti = nib.load(img_path)
+        img_data = img_nifti.get_fdata()
+
+        # Process all slices (only images)
+        num_slices = img_data.shape[2]
+        for slice_idx in range(num_slices):
+            img_slice = img_data[:, :, slice_idx]
+
+            # Normalize image slice and convert to PIL
+            img_normalized = (img_slice - img_slice.min()) / (img_slice.max() - img_slice.min()) * 255
+            img_normalized = img_normalized.astype(np.uint8)
+            img_pil = Image.fromarray(img_normalized)
+
+            # Save the image
+            img_pil.save(os.path.join(output_dir_test_images, f'test_{idx}_{slice_idx}.png'))
+
+    print("MSD Brain test MRI images have been saved!")
+
+# Main function to handle the MSD Brain dataset (train + test)
 def BRAIN():
-    # Output directories for images and masks
-    output_dir_images = 'msd_brain/images'
-    output_dir_masks = 'msd_brain/masks'
-    output_dir_nifti = 'msd_brain/nifti'
+    # Output directories for train and test data
+    base_dir = 'msd_brain'
+    output_dir_train_images = os.path.join(base_dir, 'train', 'images')
+    output_dir_train_masks = os.path.join(base_dir, 'train', 'masks')
+    output_dir_test_images = os.path.join(base_dir, 'test', 'images')
+    output_dir_nifti = os.path.join(base_dir, 'nifti')
 
-    # Create output directories if they don't exist
-    os.makedirs(output_dir_images, exist_ok=True)
-    os.makedirs(output_dir_masks, exist_ok=True)
+    os.makedirs(output_dir_train_images, exist_ok=True)
+    os.makedirs(output_dir_train_masks, exist_ok=True)
+    os.makedirs(output_dir_test_images, exist_ok=True)
     os.makedirs(output_dir_nifti, exist_ok=True)
 
-    # MSD Brain Tumor Segmentation dataset URL (Sample for testing)
+    # MSD Brain Tumor Segmentation dataset URL
     msd_brain_url = 'https://msd-for-monai.s3-us-west-2.amazonaws.com/Task01_BrainTumour.tar'
-
-    # Download path for the dataset
     msd_tar_path = 'Task01_BrainTumour.tar'
 
     # Download the dataset if not already present
@@ -366,67 +551,36 @@ def BRAIN():
         tar.extractall(output_dir_nifti)
 
     # Directory paths for images and masks within the extracted data
-    image_dir = os.path.join(output_dir_nifti, 'Task01_BrainTumour', 'imagesTr')
-    mask_dir = os.path.join(output_dir_nifti, 'Task01_BrainTumour', 'labelsTr')
+    image_dir_train = os.path.join(output_dir_nifti, 'Task01_BrainTumour', 'imagesTr')
+    mask_dir_train = os.path.join(output_dir_nifti, 'Task01_BrainTumour', 'labelsTr')
+    image_dir_test = os.path.join(output_dir_nifti, 'Task01_BrainTumour', 'imagesTs')
 
-    # CHANGE
-    image_paths = sorted([os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith('.nii.gz') and not f.startswith('._')])[:1]
-    mask_paths = sorted([os.path.join(mask_dir, f) for f in os.listdir(mask_dir) if f.endswith('.nii.gz') and not f.startswith('._')])[:1]
+    # Filter out hidden files and other system files
+    image_paths_train = sorted([os.path.join(image_dir_train, f) for f in os.listdir(image_dir_train) if f.endswith('.nii.gz') and not f.startswith('._')])[:1]
+    mask_paths_train = sorted([os.path.join(mask_dir_train, f) for f in os.listdir(mask_dir_train) if f.endswith('.nii.gz') and not f.startswith('._')])[:1]
+    image_paths_test = sorted([os.path.join(image_dir_test, f) for f in os.listdir(image_dir_test) if f.endswith('.nii.gz') and not f.startswith('._')])[:1]
 
-    # Process and save all slices 
-    for idx, (img_path, mask_path) in enumerate(zip(image_paths, mask_paths)):
-        # Load the image and mask
-        img_nifti = nib.load(img_path)
-        mask_nifti = nib.load(mask_path)
-        
-        img_data = img_nifti.get_fdata()
-        mask_data = mask_nifti.get_fdata()
-        
-        # Iterate through all slices in the volume
-        num_slices = img_data.shape[2]
-        lower_bound = int(num_slices * 0.25)
-        upper_bound = int(num_slices * 0.75)
-        for slice_idx in range(num_slices):
-            if lower_bound <= slice_idx <= upper_bound:
-                # Extract slice
-                img_slice = img_data[:, :, slice_idx]
-                mask_slice = mask_data[:, :, slice_idx]
-                
-                # Normalize image slice and convert to uint8 for visualization
-                img_normalized = (img_slice - img_slice.min()) / (img_slice.max() - img_slice.min()) * 255
-                img_normalized = img_normalized.astype(np.uint8)
-                img_pil = Image.fromarray(img_normalized)
-                
-                # Save the image
-                img_pil.save(os.path.join(output_dir_images, f'{idx}_{slice_idx}.png'))
-                
-                # Ensure the mask is properly scaled and converted to uint8
-                if mask_slice.max() > 0:
-                    mask_enhanced = (mask_slice * (255 / mask_slice.max())).astype(np.uint8)
-                else:
-                    mask_enhanced = mask_slice.astype(np.uint8)
-                
-                # Save the mask
-                mask_pil = Image.fromarray(mask_enhanced)
-                mask_pil.save(os.path.join(output_dir_masks, f'{idx}_{slice_idx}.png'))
+    # Process the train set (all slices)
+    process_brain_train(image_paths_train, mask_paths_train, output_dir_train_images, output_dir_train_masks)
 
-    print("All slices have been saved!")
+    # Process the test set (images only)
+    process_brain_test(image_paths_test, output_dir_test_images)
 
+    # Store label-to-mask-value mapping for MSD Brain
     MASK_LABELS_BRAIN = {
-    'background': [0],
-    'edema': [1],
-    'non-enhancing tumor' : [2],
-    'enhancing tumor' : [3]
+        "background": [0 * 85],
+        "edema": [1 * 85],
+        "non-enhancing tumor": [2 * 85],
+        "enhancing tumor": [3 * 85]
     }
 
-    # Save the label mapping as a JSON file in the masks folder
-    save_label_mappings(output_dir_masks, MASK_LABELS_BRAIN, "BRAIN")
-    print("BRAIN labels stored.")
+    # Save the label mapping as a JSON file inside the train/masks folder
+    save_label_mappings(output_dir_train_masks, MASK_LABELS_BRAIN, "BRAIN")
+    print("MSD Brain labels.")
 
 def main():
     os.makedirs('data', exist_ok=True)
     os.chdir('data')
-
     COCO()
     VOC()
     PET()
@@ -435,4 +589,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
