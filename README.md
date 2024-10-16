@@ -9,7 +9,7 @@ This repository contains code base for project titled __`SegOne: Reinventing Tex
 1. [Sanghyun Byun](https://shbyun080.github.io/) | `MS in Computer Science` | `USC`
 3. [Kayvan Shah](https://github.com/KayvanShah1) | `MS in Applied Data Science` | `USC`
 2. [Ayushi Gang](https://github.com/) | `MS in Computer Science` | `USC`
-4. [Chistopher Anton](https://github.com/) | `MS in Computer Science` | `USC`
+4. [Chistopher Apton](https://github.com/chrisapton) | `MS in Applied Data Science` | `USC`
 
 #### LICENSE
 This project is licensed under the `MIT` License. See the [LICENSE](LICENSE) file for details.
