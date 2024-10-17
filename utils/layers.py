@@ -21,17 +21,30 @@ def spatial_recover(x, ratio):
     x = torch.permute(x, (0, 3, 1, 2))
     return x
 
+def channel_flatten(x):
+    """Flattens B x C x HW to Bx1xHWC
+    """
+    x = torch.permute(x, (0, 2, 1))
+    x = x.reshape(x.size()[0], 1, -1)
+    return x
+
+def channel_recover(x, h, w):
+    """Recovers BxCxHW to BxCxHxW given h and w
+    """
+    x = x.reshape(x.size()[0], x.size()[1], h, w)
+    return x
+
 # Conv1D
 class Conv1DBlock(nn.Module):
-    """Layer to pad and convolve input Bx1xHWC -> Bx1xHWC
+    """Layer to pad and convolve input Bx1xHWC -> Bx1xHWC or BxCxHW
     """
-    def __init__(self, kernel_size, use_refl=True):
+    def __init__(self, kernel_size, out_channels=1, stride=1, use_refl=True):
         super(Conv1DBlock, self).__init__()
         if use_refl:
             self.pad = nn.ReflectionPad1d(kernel_size//2)
         else:
             self.pad = nn.ZeroPad1d(kernel_size//2)
-        self.conv = nn.Conv1d(1, 1, kernel_size, stride=1)
+        self.conv = nn.Conv1d(1, out_channels, kernel_size, stride=stride)
         self.relu = nn.ReLU()
 
     def forward(self, x):
