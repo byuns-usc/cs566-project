@@ -61,11 +61,11 @@ If you find our work useful in your research, please consider citing our paper:
 ### Authors
 1. [Sanghyun Byun](https://shbyun080.github.io/) | `MS in Computer Science @ USC`, `AI Partner @ LG Electronics`
 3. [Kayvan Shah](https://github.com/KayvanShah1) | `MS in Applied Data Science @ USC`
-2. [Ayushi Gang](https://github.com/) | `MS in Computer Science @ USC`
+2. [Ayushi Gang](https://github.com/ayu-04) | `MS in Computer Science @ USC`
 4. [Christopher Apton](https://github.com/chrisapton) | `MS in Applied Data Science @ USC`
 
 ### Acknowledgement
-We thank Professor Yan Liu at the University of Southern California for guidance.
+We thank `Professor Yan Liu` at the `University of Southern California` for guidance.
 
 ## 🪪 LICENSE
 This project is licensed under the `MIT` License. See the [LICENSE](LICENSE) file for details.
