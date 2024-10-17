@@ -10,7 +10,9 @@ from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 
 from datasets import datasets
-
+from segone.networks.one_encoder import OneEncoder
+from segone.networks.seg_decoder import SegDecoder
+from segone.utils.layers import calculate_losses
 
 class Trainer:
     def __init__(self, opts):

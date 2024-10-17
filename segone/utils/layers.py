@@ -107,3 +107,7 @@ class PixelUnshuffle(nn.Module):
 
 
 # Losses
+def calculate_losses(pred, label):
+    """Returns Cross Entropy Loss for Segmentation"""
+    loss = F.cross_entropy(pred, label)
+    return loss
