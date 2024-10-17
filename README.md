@@ -20,7 +20,7 @@ Environment (model has not been tested on other environments)
 - CUDA 12.1
 
 Please install dependencies with
-```
+```bash
 export VENV_DIR=<YOUR-VENV>
 export NAME=SegOne
 
@@ -28,6 +28,12 @@ python -m venv $VENV_DIR/$NAME
 source $VENV_DIR/$NAME/bin/activate
 
 pip install -r requirements.txt
+```
+
+For development use:
+- Do and editable installation locally to avoid importing issues
+```bash
+pip install -e .
 ```
 
 ## 🤖 Prediction
@@ -45,7 +51,7 @@ We currently release the following weights:
 
 ## 📜 Citation
 If you find our work useful in your research, please consider citing our paper:
-```
+```bibtex
 @misc{segone-2024,
   title={SegOne: Redefining U-Net with 1D Channel-Wise Convolution for Semantic Segmentation},
   author={Sanghyun Byun and Kayvan Shah and Ayushi Gang and Christopher Apton},
