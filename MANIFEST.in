@@ -1,0 +1,6 @@
+include README.md
+include LICENSE
+include versioneer.py
+include segone/_version.py
+include requirements.txt
+include dev-requirements.txt
