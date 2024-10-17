@@ -1,0 +1,36 @@
+name: Autoformat Code on Push
+
+on:
+  push:
+    branches:
+      - main  # Adjust the branch accordingly
+  pull_request:
+    branches:
+      - main  # Adjust the branch accordingly
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.11'  # Adjust to your Python version
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r dev-requirements.txt
+
+      - name: Check code formatting with Black
+        id: black-check
+        run: |
+          black --check . || echo "needs formatting"
+
+      - name: Format code with Black
+        if: steps.black-check.outputs.needs_formatting == 'needs formatting'
+        run: |
+          black .
