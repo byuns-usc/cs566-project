@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from utils.layers import *
+from segone.utils.layers import *
 
 
 class Bottleneck2D(nn.Module):

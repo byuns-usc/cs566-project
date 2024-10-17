@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from utils.layers import *
+from segone.utils.layers import *
 
 
 class SegDecoder(nn.Module):

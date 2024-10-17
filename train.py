@@ -3,7 +3,7 @@ import os
 
 from ruamel.yaml import YAML
 
-from trainer import Trainer
+from segone.trainer import Trainer
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

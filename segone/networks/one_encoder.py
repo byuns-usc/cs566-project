@@ -1,13 +1,9 @@
-import sys
-
-sys.path.insert(0, "/home/sang/Desktop/Conv1D/cs566-project")
-
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
 
-from utils.layers import (
+from segone.utils.layers import (
     Conv1DBlock,
     PixelShuffle,
     PixelUnshuffle,
