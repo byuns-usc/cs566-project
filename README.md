@@ -3,7 +3,7 @@
 This repository serves as the official codebase for the paper:
 > **SegOne: Redefining U-Net with 1D Channel-Wise Convolution for Semantic Segmentation**
 >
-> [Sanghyun Byun](https://shbyun080.github.io/), [Kayvan Shah](https://github.com/KayvanShah1), [Ayushi Gang](https://github.com/), and [Christopher Apton](https://github.com/chrisapton)
+> [Sanghyun Byun](https://shbyun080.github.io/), [Kayvan Shah](https://github.com/KayvanShah1), [Ayushi Gang](https://github.com/ayu-04), and [Christopher Apton](https://github.com/chrisapton)
 >
 > [arXiv:](/)
 
