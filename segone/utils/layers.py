@@ -5,7 +5,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-# B x C x H x W to B x H x W x C to B x HWC
 def spatial_flatten(x):
     """Flattens to Bx1xHWC and returns tensor with original b,c,h,w values"""
     ratio = x.size()
@@ -14,7 +13,6 @@ def spatial_flatten(x):
     return x, ratio
 
 
-# B x HWC to B x H x W x C to B x C x H x W
 def spatial_recover(x, ratio):
     """Recovers flattened shape of Bx1xHWC to given b,c,h,w ratio"""
     x = x.reshape(ratio[0], ratio[2], ratio[3], ratio[1])

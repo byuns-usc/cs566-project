@@ -1,58 +1,60 @@
-from collections import OrderedDict
-
-import numpy as np
 import torch
 import torch.nn as nn
 
-from segone.utils.layers import *
+from segone.utils.layers import (
+    Conv1DBlock,
+    PixelShuffle,
+    channel_flatten,
+    channel_recover,
+    spatial_flatten,
+    spatial_recover,
+)
 
 
 class SegDecoder(nn.Module):
-    def __init__(self, num_ch_enc, scales=range(4), num_output_channels=1, use_skips=True):
+    def __init__(self, opts, channel_enc):
         super(SegDecoder, self).__init__()
 
-        self.num_output_channels = num_output_channels
-        self.use_skips = use_skips
-        self.upsample_mode = "nearest"
-        self.scales = scales
+        self.opts = opts
+        self.channel_enc = channel_enc
+        self.len_ch_enc = len(self.channel_enc)
 
-        self.num_ch_enc = num_ch_enc
-        self.num_ch_dec = np.array([16, 32, 64, 128, 256])
+        # Initialize Layers
+        self.convs = nn.ModuleDict()
+        for i in range(self.len_ch_enc-1, 0, -1):
+            self.convs[f"channel_1_{i}"] = Conv1DBlock(
+                kernel_size=self.channel_enc[i], out_channels=2 * self.channel_enc[i], stride=self.channel_enc[i]
+            )
+            self.convs[f"channel_2_{i}"] = Conv1DBlock(
+                kernel_size=2 * self.channel_enc[i-1], out_channels=2 * self.channel_enc[i-1], stride=2 * self.channel_enc[i-1]
+            )
+            self.convs[f"spatial_{i}"] = Conv1DBlock(
+                kernel_size=self.opts["kernel_size"]
+            )
+            self.convs[f"head_{i}"] = Conv1DBlock(
+                kernel_size=2 * self.channel_enc[i-1], out_channels=self.opts["channel_out"], stride=2 * self.channel_enc[i-1]
+            )
 
-        # decoder
-        self.convs = OrderedDict()
-        for i in range(4, -1, -1):
-            # upconv_0
-            num_ch_in = self.num_ch_enc[-1] if i == 4 else self.num_ch_dec[i + 1]
-            num_ch_out = self.num_ch_dec[i]
-            self.convs[("upconv", i, 0)] = ConvBlock(num_ch_in, num_ch_out)
-
-            # upconv_1
-            num_ch_in = self.num_ch_dec[i]
-            if self.use_skips and i > 0:
-                num_ch_in += self.num_ch_enc[i - 1]
-            num_ch_out = self.num_ch_dec[i]
-            self.convs[("upconv", i, 1)] = ConvBlock(num_ch_in, num_ch_out)
-
-        for s in self.scales:
-            self.convs[("dispconv", s)] = Conv3x3(self.num_ch_dec[s], self.num_output_channels)
-
-        self.decoder = nn.ModuleList(list(self.convs.values()))
+        self.upsample = PixelShuffle(scale=2)
         self.sigmoid = nn.Sigmoid()
 
-    def forward(self, input_features):
-        self.outputs = {}
+    def forward(self, features_enc):
+        self.outputs = []
 
-        # decoder
-        x = input_features[-1]
-        for i in range(4, -1, -1):
-            x = self.convs[("upconv", i, 0)](x)
-            x = [upsample(x)]
-            if self.use_skips and i > 0:
-                x += [input_features[i - 1]]
-            x = torch.cat(x, 1)
-            x = self.convs[("upconv", i, 1)](x)
-            if i in self.scales:
-                self.outputs[("disp", i)] = self.sigmoid(self.convs[("dispconv", i)](x))
+        x = features_enc[-1]
+        x, _ = spatial_flatten(x)
+        for i in range(self.len_ch_enc-1, -1, -1):
+            x = self.convs[f"channel_1_{i}"](x)
+            x = channel_recover(x, h, w)
+            x = self.upsample(x)
+            x, (_,_,h,w) = spatial_flatten(x)
+            x = self.convs[f"channel_2_{i}"](x)
+            x = channel_flatten(x)
+            self.outputs.insert(0, 
+                self.channel_recover(
+                    self.convs[f"head_{i}"](x), h, w
+                )
+            )
+            x = self.convs[f"spatial_{i}"](x)
 
         return self.outputs

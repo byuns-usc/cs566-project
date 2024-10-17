@@ -1,5 +1,3 @@
-import matplotlib.pyplot as plt
-import numpy as np
 import torch
 import torch.nn as nn
 
@@ -17,6 +15,7 @@ from segone.utils.layers import (
 
 
 class BottleneckBlock(nn.Module):
+    """Performs single spatial conv1D"""
     def __init__(self, scale=2):
         super(BottleneckBlock, self).__init__()
 
@@ -44,6 +43,7 @@ class BottleneckBlock(nn.Module):
 
 
 class Bottleneck(nn.Module):
+    """Chain of Conv1D for channel expansion"""
     def __init__(self, scale=2, repeat=3, in_channels=3, out_channels=32):
         super(Bottleneck, self).__init__()
 
@@ -93,7 +93,7 @@ class OneEncoder(nn.Module):
         self.bottleneck = Bottleneck(scale=self.opts["bottleneck_scale"], repeat=self.opts["bottleneck_repeat"])
         self.convs = nn.ModuleDict()
         for i in range(self.opts["num_layers"]):
-            self.convs[f"spatial_{i}"] = Conv1DBlock(kernel_size=3)
+            self.convs[f"spatial_{i}"] = Conv1DBlock(kernel_size=self.opts["kernel_size"])
             self.convs[f"channel_1_{i}"] = Conv1DBlock(
                 kernel_size=2 * self.channels[i + 1], out_channels=self.channels[i + 1], stride=2 * self.channels[i + 1]
             )
@@ -125,16 +125,3 @@ class OneEncoder(nn.Module):
             self.features.append(x)
 
         return self.features
-
-
-if __name__ == "__main__":
-    sample = torch.rand((5, 6, 512, 512))
-    model = Pool1D(kernel_size=3)
-    # model = Bottleneck(scale=2, repeat=5)
-    sample, (b, c, h, w) = spatial_flatten(sample)
-    out = model(sample)
-    out = spatial_recover(out, (b, c // 2, h, w))
-    arr = out[0].detach().numpy()
-    print(arr.shape)
-    # plt.imshow(np.transpose(arr[:3], axes=[1,2,0]))
-    # plt.show()
