@@ -1,7 +1,7 @@
-# SegOne: Reinventing Semantic Segmentation with Channel-Wise 1D Convolutions
+# SegOne: Redefining U-Net with 1D Channel-Wise Convolution for Semantic Segmentation
 
 This repository serves as the official codebase for the paper:
-> **SegOne: Reinventing Semantic Segmentation with Channel-Wise 1D Convolutions**
+> **SegOne: Redefining U-Net with 1D Channel-Wise Convolution for Semantic Segmentation**
 >
 > [Sanghyun Byun](https://shbyun080.github.io/), [Kayvan Shah](https://github.com/KayvanShah1), [Ayushi Gang](https://github.com/), and [Christopher Apton](https://github.com/chrisapton)
 >
@@ -47,7 +47,7 @@ We currently release the following weights:
 If you find our work useful in your research, please consider citing our paper:
 ```
 @misc{segone-2024,
-  title={SegOne: Reinventing Semantic Segmentation with Channel-Wise 1D Convolutions},
+  title={SegOne: Redefining U-Net with 1D Channel-Wise Convolution for Semantic Segmentation},
   author={Sanghyun Byun and Kayvan Shah and Ayushi Gang and Christopher Apton},
   archivePrefix={arXiv:},
   eprint={},
