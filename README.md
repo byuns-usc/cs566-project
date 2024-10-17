@@ -13,13 +13,20 @@ Many modern computer vision architectures leverage diffusion for its ease of fea
 ## 🚧 Roadmap
 10/01/2024: Project Repo Initialized
 
-## ⚙️ Setup
+## ⚙️ Installation
 Environment (model has not been tested on other environments)
-- python 3.12
+- Linux
+- Python 3.12
 - CUDA 12.1
 
-Install dependencies with
+Please install dependencies with
 ```
+export VENV_DIR=<YOUR-VENV>
+export NAME=SegOne
+
+python -m venv $VENV_DIR/$NAME
+source $VENV_DIR/$NAME/bin/activate
+
 pip install -r requirements.txt
 ```
 
@@ -29,7 +36,9 @@ WIP
 ## 🦾 Training
 WIP
 
-## 📦 Trained Weights
+## 📦 Model Zoo
+We currently release the following weights:
+
 |Model         |Input Size|Dataset   |Download    |
 |--------------|----------|----------|------------|
 |SegOne-NYUv2  |512x512   |NYUv2     |[Link]()    |
@@ -54,6 +63,9 @@ If you find our work useful in your research, please consider citing our paper:
 3. [Kayvan Shah](https://github.com/KayvanShah1) | `MS in Applied Data Science @ USC`
 2. [Ayushi Gang](https://github.com/) | `MS in Computer Science @ USC`
 4. [Christopher Apton](https://github.com/chrisapton) | `MS in Applied Data Science @ USC`
+
+### Acknowledgement
+We thank Professor Yan Liu at the University of Southern California for guidance.
 
 ## 🪪 LICENSE
 This project is licensed under the `MIT` License. See the [LICENSE](LICENSE) file for details.
