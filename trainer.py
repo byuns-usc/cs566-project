@@ -1,29 +1,27 @@
 import os
-from ruamel.yaml import YAML
 import time
 
 import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
-from torch.utils.data import DataLoader
-
+from ruamel.yaml import YAML
 from tensorboardX import SummaryWriter
+from torch.utils.data import DataLoader
 
 from datasets import datasets
 
+
 class Trainer:
     def __init__(self, opts):
-        self.data_opts = opts['data']
-        self.train_opts = opts['train']
-        self.model_opts = opts['model']
+        self.data_opts = opts["data"]
+        self.train_opts = opts["train"]
+        self.model_opts = opts["model"]
 
         self.device = torch.device("cuda" if self.train_opts.cuda and torch.cuda.is_available() else "cpu")
-        
+
         # TODO Load Data
-        self.dataset = {
-            'coco': datasets.COCO
-        }
+        self.dataset = {"coco": datasets.COCO}
         self.train_dataset
         self.val_dataset
         self.train_loader
@@ -31,17 +29,17 @@ class Trainer:
 
         # TODO Define model
         model = None
-        if self.train_opts['load_weights'] is not None:
+        if self.train_opts["load_weights"] is not None:
             self.load_model()
 
         # Set training params
-        self.optim = optim.Adam(self.model.parameters(), self.train_opts['learning_rate'])
-        self.lr_scheduler = optim.lr_scheduler.StepLR(self.optim, self.train_opts['lr_step'], 0.1)
+        self.optim = optim.Adam(self.model.parameters(), self.train_opts["learning_rate"])
+        self.lr_scheduler = optim.lr_scheduler.StepLR(self.optim, self.train_opts["lr_step"], 0.1)
 
         # Make dir and save options used
-        self.save_dir = os.path.join(self.train_opts['save_dir'], str(int(time.time())))
+        self.save_dir = os.path.join(self.train_opts["save_dir"], str(int(time.time())))
         os.makedirs(self.save_dir)
-        with open(os.path.join(self.save_dir, 'config.yaml'), 'wb') as f:
+        with open(os.path.join(self.save_dir, "config.yaml"), "wb") as f:
             yaml = YAML()
             yaml.dump(opts, f)
 
@@ -59,13 +57,13 @@ class Trainer:
                 self.model_optimizer.step()
 
             self.val()
-            
+
             if (self.epoch + 1) % self.opt.save_frequency == 0:
                 self.save_model()
 
     def val(self):
         self.model.eval()
-        
+
         try:
             inputs = self.val_iter.next()
         except StopIteration:
@@ -79,8 +77,7 @@ class Trainer:
         self.model.train()
 
     def compute_losses(self, inputs, outputs):
-        """Compute the reprojection and smoothness losses for a minibatch
-        """
+        """Compute the reprojection and smoothness losses for a minibatch"""
         losses = {}
 
         return losses
@@ -93,11 +90,11 @@ class Trainer:
         for model_name, model in self.models.items():
             save_path = os.path.join(save_folder, "{}.pth".format(model_name))
             to_save = model.state_dict()
-            if model_name == 'encoder':
+            if model_name == "encoder":
                 # save the sizes - these are needed at prediction time
-                to_save['height'] = self.opt.height
-                to_save['width'] = self.opt.width
-                to_save['use_stereo'] = self.opt.use_stereo
+                to_save["height"] = self.opt.height
+                to_save["width"] = self.opt.width
+                to_save["use_stereo"] = self.opt.use_stereo
             torch.save(to_save, save_path)
 
         save_path = os.path.join(save_folder, "{}.pth".format("adam"))
@@ -106,8 +103,7 @@ class Trainer:
     def load_model(self):
         self.opt.load_weights_folder = os.path.expanduser(self.opt.load_weights_folder)
 
-        assert os.path.isdir(self.opt.load_weights_folder), \
-            "Cannot find folder {}".format(self.opt.load_weights_folder)
+        assert os.path.isdir(self.opt.load_weights_folder), "Cannot find folder {}".format(self.opt.load_weights_folder)
         print("loading model from folder {}".format(self.opt.load_weights_folder))
 
         for n in self.opt.models_to_load:

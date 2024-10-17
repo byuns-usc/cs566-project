@@ -1,8 +1,9 @@
+from collections import OrderedDict
+
 import numpy as np
 import torch
 import torch.nn as nn
 
-from collections import OrderedDict
 from utils.layers import *
 
 
@@ -12,7 +13,7 @@ class SegDecoder(nn.Module):
 
         self.num_output_channels = num_output_channels
         self.use_skips = use_skips
-        self.upsample_mode = 'nearest'
+        self.upsample_mode = "nearest"
         self.scales = scales
 
         self.num_ch_enc = num_ch_enc
