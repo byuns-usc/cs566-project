@@ -16,6 +16,7 @@ from segone.utils.layers import (
 
 class BottleneckBlock(nn.Module):
     """Performs single spatial conv1D"""
+
     def __init__(self, scale=2):
         super(BottleneckBlock, self).__init__()
 
@@ -44,6 +45,7 @@ class BottleneckBlock(nn.Module):
 
 class Bottleneck(nn.Module):
     """Chain of Conv1D for channel expansion"""
+
     def __init__(self, scale=2, repeat=3, in_channels=3, out_channels=32):
         super(Bottleneck, self).__init__()
 

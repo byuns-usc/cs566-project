@@ -1,15 +1,14 @@
-import json
 import os
-import random
-import tarfile
-import zipfile
-
-import nibabel as nib
-import numpy as np
 import requests
-import torchvision.datasets as datasets
-import torchvision.transforms as T
+import zipfile
+import json
+import numpy as np
 from PIL import Image, ImageDraw
+import random
+import torchvision.transforms as T
+import torchvision.datasets as datasets
+import tarfile
+import nibabel as nib
 
 
 # download and save images based on file name from COCO
@@ -419,23 +418,19 @@ def process_heart_train(image_paths, mask_paths, output_dir_train_images, output
 
 
 # Function to process the MSD Heart test set (use all slices, includes masks if available)
-def process_heart_test(image_paths, mask_paths, output_dir_test_images, output_dir_test_masks):
+def process_heart_test(image_paths, output_dir_test_images):
     os.makedirs(output_dir_test_images, exist_ok=True)
-    os.makedirs(output_dir_test_masks, exist_ok=True)
 
     # Process each image and mask pair
-    for idx, (img_path, mask_path) in enumerate(zip(image_paths, mask_paths)):
+    for idx, img_path in enumerate(image_paths):
         # Load the image and mask
         img_nifti = nib.load(img_path)
-        mask_nifti = nib.load(mask_path)
 
         img_data = img_nifti.get_fdata()
-        mask_data = mask_nifti.get_fdata()
 
         # Process all slices
         for slice_idx in range(img_data.shape[2]):
             img_slice = img_data[:, :, slice_idx]
-            mask_slice = mask_data[:, :, slice_idx]
 
             # Normalize image slice and convert to PIL
             img_normalized = (img_slice - img_slice.min()) / (img_slice.max() - img_slice.min()) * 255
@@ -444,10 +439,8 @@ def process_heart_test(image_paths, mask_paths, output_dir_test_images, output_d
 
             # Save the image and corresponding mask in the respective directories
             img_pil.save(os.path.join(output_dir_test_images, f"test_{idx}_{slice_idx}.jpg"))
-            mask_pil = Image.fromarray(mask_slice.astype(np.uint8) * 85)  # Scale mask values (0-3) to (0-255)
-            mask_pil.save(os.path.join(output_dir_test_masks, f"test_{idx}_{slice_idx}.png"))
 
-    print("MSD Heart test MRI images and masks (all slices) have been saved!")
+    print("MSD Heart test MRI images (all slices) have been saved!")
 
 
 # Main function to handle the MSD Heart dataset (train + test)
@@ -457,13 +450,11 @@ def HEART():
     output_dir_train_images = os.path.join(base_dir, "train", "images")
     output_dir_train_masks = os.path.join(base_dir, "train", "masks")
     output_dir_test_images = os.path.join(base_dir, "test", "images")
-    output_dir_test_masks = os.path.join(base_dir, "test", "masks")
     output_dir_nifti = os.path.join(base_dir, "nifti")
 
     os.makedirs(output_dir_train_images, exist_ok=True)
     os.makedirs(output_dir_train_masks, exist_ok=True)
     os.makedirs(output_dir_test_images, exist_ok=True)
-    os.makedirs(output_dir_test_masks, exist_ok=True)
     os.makedirs(output_dir_nifti, exist_ok=True)
 
     # MSD Heart Segmentation dataset URL
@@ -499,8 +490,18 @@ def HEART():
     # Process the train set (mid 50% slices)
     process_heart_train(image_paths, mask_paths, output_dir_train_images, output_dir_train_masks)
 
+    image_dir_test = os.path.join(output_dir_nifti, "Task02_Heart", "imagesTs")
+
+    image_paths_test = sorted(
+        [
+            os.path.join(image_dir_test, f)
+            for f in os.listdir(image_dir_test)
+            if f.endswith(".nii.gz") and not f.startswith("._")
+        ]
+    )[:1]
+
     # Process the test set (all slices, includes masks)
-    process_heart_test(image_paths, mask_paths, output_dir_test_images, output_dir_test_masks)
+    process_heart_test(image_paths_test, output_dir_test_images)
 
     # Store label-to-mask-value mapping for MSD Heart
     # Scale mask values (0-3) to (0-255)
