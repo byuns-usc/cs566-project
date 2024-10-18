@@ -8,6 +8,8 @@ model:
   bottleneck_repeat: 5
 
 data:
+  name: COCO
+  datapath: data/coco
   resolution:
     - 512
     - 512

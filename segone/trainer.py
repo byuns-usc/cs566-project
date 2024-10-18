@@ -9,12 +9,14 @@ from ruamel.yaml import YAML
 from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 
-from datasets import datasets
+from datasets.dataloaders import create_dataloader
 from segone.networks.one_encoder import OneEncoder
 from segone.networks.seg_decoder import SegDecoder
 from segone.utils.layers import calculate_losses
 
 class Trainer:
+    available_datasets = ("COCO", "VOC", "PET", "BRAIN", "HEART")
+
     def __init__(self, opts):
         self.data_opts = opts["data"]
         self.train_opts = opts["train"]
@@ -23,7 +25,7 @@ class Trainer:
         self.device = torch.device("cuda" if self.train_opts.cuda and torch.cuda.is_available() else "cpu")
 
         # TODO Load Data
-        self.dataset = {"coco": datasets.COCO}
+        assert self.data_opts["name"] in self.available_datasets
         self.train_dataset
         self.val_dataset
         self.train_loader
