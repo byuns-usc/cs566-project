@@ -14,6 +14,7 @@ from segone.networks.one_encoder import OneEncoder
 from segone.networks.seg_decoder import SegDecoder
 from segone.utils.layers import calculate_losses
 
+
 class Trainer:
     available_datasets = ("COCO", "VOC", "PET", "BRAIN", "HEART")
 
