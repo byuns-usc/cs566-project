@@ -10,8 +10,8 @@ from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 
 from datasets.dataloaders import create_dataloader
-from segone.networks.one_encoder import OneEncoder
-from segone.networks.seg_decoder import SegDecoder
+from segone.networks.segone_network import SegOne
+from segone.networks.common_network import CommonNet
 from segone.utils.layers import calculate_losses
 
 
