@@ -1,10 +1,8 @@
-import json
 import os
-
-import matplotlib.pyplot as plt
-from PIL import Image
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
+from PIL import Image
+import json
 
 os.chdir("data")
 
@@ -133,17 +131,19 @@ if __name__=="__main__":
         voc_root_dir, "VOC", split="train", img_size=fixed_size
     )
 
-    voc_loader_val = create_dataloader(voc_root_dir, "VOC", split="val", img_size=fixed_size)
+    # Pascal VOC Dataset Loaders, no test set
+    voc_root_dir = "voc"
+    voc_loader_train = create_dataloader(
+        voc_root_dir, "VOC", split="train", transform=transform, mask_transform=mask_transform
+    )
 
     voc_loader_test = create_dataloader(voc_root_dir, "VOC", split="test", img_size=fixed_size)
 
     # Oxford-IIIT Pet Dataset Loaders (trainval folder for both train and val)
     pets_root_dir = "oxford_pet"
     pets_loader_train = create_dataloader(
-        pets_root_dir, "PET", split="train", img_size=fixed_size
+        pets_root_dir, "PET", split="train", transform=transform, mask_transform=mask_transform
     )
-
-    pets_loader_test = create_dataloader(pets_root_dir, "PET", split="test", img_size=fixed_size)
 
     # MSD Brain Tumor Dataset Loaders
     brain_root_dir = "msd_brain"
@@ -162,6 +162,19 @@ if __name__=="__main__":
     heart_loader_test = create_dataloader(heart_root_dir, "HEART", split="test", img_size=fixed_size)
 
     # Verifying the Dataloader Outputs
+    def verify_dataloader(dataloader, name, num_samples=4):
+        for batch in dataloader:
+            if isinstance(batch, list) and len(batch) == 3:
+                images, masks, labels = batch
+                print(f"{name} Dataloader: Image batch shape: {images.shape}, Mask batch shape: {masks.shape}")
+            else:  # Test case: only images
+                images = batch
+                print(f"{name} Dataloader: Image batch shape: {images.shape}")
+
+    # Verifying the Dataloader Outputs
+    import matplotlib.pyplot as plt
+
+
     def verify_dataloader(dataloader, name, num_samples=4):
         for batch in dataloader:
             if isinstance(batch, list) and len(batch) == 3:
@@ -195,10 +208,9 @@ if __name__=="__main__":
     verify_dataloader(coco_loader_val, "COCO Val")
     verify_dataloader(coco_loader_test, "COCO Test")
     verify_dataloader(voc_loader_train, "VOC Train")
-    verify_dataloader(voc_loader_val, "VOC Val")
-    verify_dataloader(voc_loader_test, "VOC Test")
+    # verify_dataloader(voc_loader_val, "VOC Val")
     verify_dataloader(pets_loader_train, "Oxford-IIIT Pets Train")
-    verify_dataloader(pets_loader_test, "Oxford-IIIT Pets Test")
+    # verify_dataloader(pets_loader_test, "Oxford-IIIT Pets Test")
     verify_dataloader(brain_loader_train, "MSD Brain Tumor Train")
     verify_dataloader(brain_loader_test, "MSD Brain Tumor Test")
     verify_dataloader(heart_loader_train, "MSD Heart Train")

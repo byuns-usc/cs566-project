@@ -9,6 +9,7 @@ import torchvision.transforms as T
 import torchvision.datasets as datasets
 import tarfile
 import nibabel as nib
+import urllib
 
 
 # download and save images based on file name from COCO
@@ -265,32 +266,6 @@ def VOC():
         root="./data", year="2012", image_set="val", download=True, transform=T.ToTensor()
     )
     process_voc_split(val_dataset, class_names, class_to_color, val_output_dir_images, val_output_dir_masks, "val")
-
-    # Process Test Set - no masks here
-    test_output_dir_images = os.path.join(base_dir, "test/images")
-    os.makedirs(test_output_dir_images, exist_ok=True)
-    test_dataset = datasets.VOCSegmentation(
-        root="./data", year="2012", image_set="val", download=False, transform=T.ToTensor()
-    )
-
-    # For test, only save images
-    for idx in range(10):  # Same sample limit
-        img, _ = test_dataset[idx]  # No mask for the test set
-        img = T.ToPILImage()(img)
-        img_path = os.path.join(test_output_dir_images, f"test_{idx}.jpg")
-        img.save(img_path)
-
-    print("Test PASCAL VOC images have been saved.")
-
-    # Store label-to-mask-value mapping for VOC
-    label_mapping = {}
-    for class_id in class_to_color:
-        label_mapping[class_names[class_id]] = class_to_color[class_id]
-
-    # Save the label mapping as a JSON file in the masks folder for train and val
-    save_label_mappings(train_output_dir_masks, label_mapping, "Train")
-    save_label_mappings(val_output_dir_masks, label_mapping, "Val")
-    print("VOC labels stored.")
 
 
 def process_pet_split(
@@ -667,11 +642,11 @@ def BRAIN():
 def main():
     os.makedirs("data", exist_ok=True)
     os.chdir("data")
-    COCO()
+    # COCO()
     VOC()
-    PET()
-    HEART()
-    BRAIN()
+    # PET()
+    # HEART()
+    # BRAIN()
 
 
 if __name__ == "__main__":
