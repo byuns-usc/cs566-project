@@ -1,10 +1,8 @@
-import json
 import os
-
-import matplotlib.pyplot as plt
-from PIL import Image
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
+from PIL import Image
+import json
 
 os.chdir("data")
 
@@ -128,15 +126,13 @@ coco_loader_val = create_dataloader(
 
 coco_loader_test = create_dataloader(coco_root_dir, "COCO", split="test", transform=transform)
 
-# Pascal VOC Dataset Loaders
+# Pascal VOC Dataset Loaders, no test set
 voc_root_dir = "voc"
 voc_loader_train = create_dataloader(
     voc_root_dir, "VOC", split="train", transform=transform, mask_transform=mask_transform
 )
 
 voc_loader_val = create_dataloader(voc_root_dir, "VOC", split="val", transform=transform, mask_transform=mask_transform)
-
-voc_loader_test = create_dataloader(voc_root_dir, "VOC", split="test", transform=transform)
 
 # Oxford-IIIT Pet Dataset Loaders (trainval folder for both train and val)
 pets_root_dir = "oxford_pet"
@@ -163,6 +159,7 @@ heart_loader_train = create_dataloader(
 heart_loader_test = create_dataloader(heart_root_dir, "HEART", split="test", transform=transform)
 
 # Verifying the Dataloader Outputs
+import matplotlib.pyplot as plt
 
 
 def verify_dataloader(dataloader, name, num_samples=4):
@@ -199,7 +196,6 @@ verify_dataloader(coco_loader_val, "COCO Val")
 verify_dataloader(coco_loader_test, "COCO Test")
 verify_dataloader(voc_loader_train, "VOC Train")
 verify_dataloader(voc_loader_val, "VOC Val")
-verify_dataloader(voc_loader_test, "VOC Test")
 verify_dataloader(pets_loader_train, "Oxford-IIIT Pets Train")
 verify_dataloader(pets_loader_test, "Oxford-IIIT Pets Test")
 verify_dataloader(brain_loader_train, "MSD Brain Tumor Train")
