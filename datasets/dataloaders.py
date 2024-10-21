@@ -91,11 +91,12 @@ def create_dataloader(
     split="train",
     batch_size=8,
     shuffle=True,
-    transform=None,
-    mask_transform=None,
+    img_size=(360, 640),
     mask_suffix="",
     mask_ext=".png",
 ):
+    transform = transforms.Compose([transforms.Resize(img_size), transforms.ToTensor()])
+    mask_transform = transforms.Compose([transforms.Resize(img_size), transforms.ToTensor()])
     dataset = ImageMaskDataset(
         root_dir,
         dataset_name,
@@ -108,101 +109,97 @@ def create_dataloader(
     return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 
 
-# Set a fixed size for all images and masks
-fixed_size = (360, 640)  # (height, width)
+if __name__=="__main__":
+    # SAMPLE WORKFLOW
 
-# Transforms for Images and Masks
-transform = transforms.Compose([transforms.Resize(fixed_size), transforms.ToTensor()])
+    # Set a fixed size for all images and masks
+    fixed_size = (360, 640)  # (height, width)
 
-mask_transform = transforms.Compose([transforms.Resize(fixed_size), transforms.ToTensor()])
+    # COCO Dataset Loaders
+    coco_root_dir = "coco"
+    coco_loader_train = create_dataloader(
+        coco_root_dir, "COCO", split="train", img_size=fixed_size
+    )
 
-# COCO Dataset Loaders
-coco_root_dir = "coco"
-coco_loader_train = create_dataloader(
-    coco_root_dir, "COCO", split="train", transform=transform, mask_transform=mask_transform
-)
+    coco_loader_val = create_dataloader(
+        coco_root_dir, "COCO", split="val", img_size=fixed_size
+    )
 
-coco_loader_val = create_dataloader(
-    coco_root_dir, "COCO", split="val", transform=transform, mask_transform=mask_transform
-)
+    coco_loader_test = create_dataloader(coco_root_dir, "COCO", split="test", img_size=fixed_size)
 
-coco_loader_test = create_dataloader(coco_root_dir, "COCO", split="test", transform=transform)
+    # Pascal VOC Dataset Loaders
+    voc_root_dir = "voc"
+    voc_loader_train = create_dataloader(
+        voc_root_dir, "VOC", split="train", img_size=fixed_size
+    )
 
-# Pascal VOC Dataset Loaders
-voc_root_dir = "voc"
-voc_loader_train = create_dataloader(
-    voc_root_dir, "VOC", split="train", transform=transform, mask_transform=mask_transform
-)
+    voc_loader_val = create_dataloader(voc_root_dir, "VOC", split="val", img_size=fixed_size)
 
-voc_loader_val = create_dataloader(voc_root_dir, "VOC", split="val", transform=transform, mask_transform=mask_transform)
+    voc_loader_test = create_dataloader(voc_root_dir, "VOC", split="test", img_size=fixed_size)
 
-voc_loader_test = create_dataloader(voc_root_dir, "VOC", split="test", transform=transform)
+    # Oxford-IIIT Pet Dataset Loaders (trainval folder for both train and val)
+    pets_root_dir = "oxford_pet"
+    pets_loader_train = create_dataloader(
+        pets_root_dir, "PET", split="train", img_size=fixed_size
+    )
 
-# Oxford-IIIT Pet Dataset Loaders (trainval folder for both train and val)
-pets_root_dir = "oxford_pet"
-pets_loader_train = create_dataloader(
-    pets_root_dir, "PET", split="train", transform=transform, mask_transform=mask_transform
-)
+    pets_loader_test = create_dataloader(pets_root_dir, "PET", split="test", img_size=fixed_size)
 
-pets_loader_test = create_dataloader(pets_root_dir, "PET", split="test", transform=transform)
+    # MSD Brain Tumor Dataset Loaders
+    brain_root_dir = "msd_brain"
+    brain_loader_train = create_dataloader(
+        brain_root_dir, "BRAIN", split="train", img_size=fixed_size
+    )
 
-# MSD Brain Tumor Dataset Loaders
-brain_root_dir = "msd_brain"
-brain_loader_train = create_dataloader(
-    brain_root_dir, "BRAIN", split="train", transform=transform, mask_transform=mask_transform
-)
+    brain_loader_test = create_dataloader(brain_root_dir, "BRAIN", split="test", img_size=fixed_size)
 
-brain_loader_test = create_dataloader(brain_root_dir, "BRAIN", split="test", transform=transform)
+    # MSD Heart Dataset Loaders
+    heart_root_dir = "msd_heart"
+    heart_loader_train = create_dataloader(
+        heart_root_dir, "HEART", split="train", img_size=fixed_size
+    )
 
-# MSD Heart Dataset Loaders
-heart_root_dir = "msd_heart"
-heart_loader_train = create_dataloader(
-    heart_root_dir, "HEART", split="train", transform=transform, mask_transform=mask_transform
-)
+    heart_loader_test = create_dataloader(heart_root_dir, "HEART", split="test", img_size=fixed_size)
 
-heart_loader_test = create_dataloader(heart_root_dir, "HEART", split="test", transform=transform)
+    # Verifying the Dataloader Outputs
+    def verify_dataloader(dataloader, name, num_samples=4):
+        for batch in dataloader:
+            if isinstance(batch, list) and len(batch) == 3:
+                images, masks, labels = batch
+                print(f"{name} Dataloader: Image batch shape: {images.shape}, Mask batch shape: {masks.shape}")
+            else:  # Test case: only images
+                images = batch
+                print(f"{name} Dataloader: Image batch shape: {images.shape}")
 
-# Verifying the Dataloader Outputs
+            # Display a few samples
+            fig, axs = plt.subplots(num_samples, 2, figsize=(10, num_samples * 5))
+            for i in range(num_samples):
+                img = images[i].permute(1, 2, 0).numpy()  # Convert from (C, H, W) to (H, W, C)
+                axs[i, 0].imshow(img)
+                axs[i, 0].set_title("Image")
+                axs[i, 0].axis("off")
 
+                if len(batch) == 3:  # Only display masks for train/val
+                    mask = masks[i].permute(1, 2, 0).numpy()  # Remove channel dimension for mask
+                    axs[i, 1].imshow(mask)
+                    axs[i, 1].set_title("Mask")
+                    axs[i, 1].axis("off")
 
-def verify_dataloader(dataloader, name, num_samples=4):
-    for batch in dataloader:
-        if isinstance(batch, list) and len(batch) == 3:
-            images, masks, labels = batch
-            print(f"{name} Dataloader: Image batch shape: {images.shape}, Mask batch shape: {masks.shape}")
-        else:  # Test case: only images
-            images = batch
-            print(f"{name} Dataloader: Image batch shape: {images.shape}")
-
-        # Display a few samples
-        fig, axs = plt.subplots(num_samples, 2, figsize=(10, num_samples * 5))
-        for i in range(num_samples):
-            img = images[i].permute(1, 2, 0).numpy()  # Convert from (C, H, W) to (H, W, C)
-            axs[i, 0].imshow(img)
-            axs[i, 0].set_title("Image")
-            axs[i, 0].axis("off")
-
-            if len(batch) == 3:  # Only display masks for train/val
-                mask = masks[i].permute(1, 2, 0).numpy()  # Remove channel dimension for mask
-                axs[i, 1].imshow(mask)
-                axs[i, 1].set_title("Mask")
-                axs[i, 1].axis("off")
-
-        plt.tight_layout()
-        plt.show()
-        break  # Only verify the first batch
+            plt.tight_layout()
+            plt.show()
+            break  # Only verify the first batch
 
 
-# Verify each dataloader
-verify_dataloader(coco_loader_train, "COCO Train")
-verify_dataloader(coco_loader_val, "COCO Val")
-verify_dataloader(coco_loader_test, "COCO Test")
-verify_dataloader(voc_loader_train, "VOC Train")
-verify_dataloader(voc_loader_val, "VOC Val")
-verify_dataloader(voc_loader_test, "VOC Test")
-verify_dataloader(pets_loader_train, "Oxford-IIIT Pets Train")
-verify_dataloader(pets_loader_test, "Oxford-IIIT Pets Test")
-verify_dataloader(brain_loader_train, "MSD Brain Tumor Train")
-verify_dataloader(brain_loader_test, "MSD Brain Tumor Test")
-verify_dataloader(heart_loader_train, "MSD Heart Train")
-verify_dataloader(heart_loader_test, "MSD Heart Test")
+    # Verify each dataloader
+    verify_dataloader(coco_loader_train, "COCO Train")
+    verify_dataloader(coco_loader_val, "COCO Val")
+    verify_dataloader(coco_loader_test, "COCO Test")
+    verify_dataloader(voc_loader_train, "VOC Train")
+    verify_dataloader(voc_loader_val, "VOC Val")
+    verify_dataloader(voc_loader_test, "VOC Test")
+    verify_dataloader(pets_loader_train, "Oxford-IIIT Pets Train")
+    verify_dataloader(pets_loader_test, "Oxford-IIIT Pets Test")
+    verify_dataloader(brain_loader_train, "MSD Brain Tumor Train")
+    verify_dataloader(brain_loader_test, "MSD Brain Tumor Test")
+    verify_dataloader(heart_loader_train, "MSD Heart Train")
+    verify_dataloader(heart_loader_test, "MSD Heart Test")

@@ -1,4 +1,5 @@
 model:
+  name: SEGONE
   channel_in: 3
   channel_out: 13
   num_layers: 5

@@ -17,6 +17,11 @@ from segone.utils.layers import calculate_losses
 
 class Trainer:
     available_datasets = ("COCO", "VOC", "PET", "BRAIN", "HEART")
+    available_models = {"SEGONE": (OneEncoder, SegDecoder), 
+                        "RESNET": (R), 
+                        "UNET", 
+                        "SKIPINIT", 
+                        "EUNNET"}
 
     def __init__(self, opts):
         self.data_opts = opts["data"]
@@ -25,15 +30,15 @@ class Trainer:
 
         self.device = torch.device("cuda" if self.train_opts.cuda and torch.cuda.is_available() else "cpu")
 
-        # TODO Load Data
+        # Load Data
         assert self.data_opts["name"] in self.available_datasets
-        self.train_dataset
-        self.val_dataset
-        self.train_loader
-        self.val_loader
+        assert self.data_opts["resolution"][0] % 32 == 0 and self.data_opts["resolution"][1] % 32 == 0
+        self.train_loader = create_dataloader(self.data_opts["datapath"], self.data_opts["name"], split="train", img_size=self.data_opts["resolution"])
+        self.val_loader = create_dataloader(self.data_opts["datapath"], self.data_opts["name"], split="val", img_size=self.data_opts["resolution"])
 
         # TODO Define model
-        model = None
+        assert self.model_opts["name"] in self.available_models
+        model = 
         if self.train_opts["load_weights"] is not None:
             self.load_model()
 
