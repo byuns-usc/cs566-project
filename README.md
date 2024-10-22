@@ -13,6 +13,8 @@ Many modern computer vision architectures leverage diffusion for its ease of fea
 ## 🚧 Roadmap
 10/01/2024: Project Repo Initialized
 
+10/22/2024: Initial Model and Training Code Uploaded
+
 ## ⚙️ Installation
 Environment (model has not been tested on other environments)
 - Linux
@@ -40,14 +42,41 @@ pip install -e .
 WIP
 
 ## 🦾 Training
-WIP
+
+### Config Options
+Before training, the below config parameters must be changed in config accordingly:
+```
+model:
+  name: SEGONE | RESNET | UNET | SKIPINIT | EUNNET
+  channel_in: 1 (GREY) | 3 (RGB) | 4(RGBD)
+  channel_out: <FOLLOW DATASET CLASS NUM>
+
+data:
+  name: COCO | VOC | PET | BRAIN | HEART
+  datapath: <PATH TO DATA FOLDER>
+
+train:
+  type: segmentation | classification
+```
+
+### Train
+```
+python train.py --cfg <PATH TO CONFIG FILE>
+```
 
 ## 📦 Model Zoo
 We currently release the following weights:
 
 |Model         |Input Size|Dataset   |Download    |
 |--------------|----------|----------|------------|
-|SegOne-NYUv2  |512x512   |NYUv2     |[Link]()    |
+|SegOne-       |512x512   |NYUv2     |[Link]()    |
+
+### Dataset
+- COCO
+- VOC
+- Oxford PET
+- MSD Brain
+- MSD Heart
 
 ## 📜 Citation
 If you find our work useful in your research, please consider citing our paper:
