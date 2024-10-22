@@ -18,11 +18,13 @@ from segone.networks.common_network import CommonNet
 
 class Trainer:
     available_datasets = ("COCO", "VOC", "PET", "BRAIN", "HEART")
-    available_models = {"SEGONE": SegOne, 
-                        "RESNET": CommonNet, 
-                        "UNET": CommonNet, 
-                        "SKIPINIT": CommonNet, 
-                        "EUNNET": CommonNet}
+    available_models = {
+        "SEGONE": SegOne,
+        "RESNET": CommonNet,
+        "UNET": CommonNet,
+        "SKIPINIT": CommonNet,
+        "EUNNET": CommonNet,
+    }
 
     def __init__(self, opts):
         self.data_opts = opts["data"]
@@ -35,20 +37,20 @@ class Trainer:
         assert self.data_opts["name"] in self.available_datasets
         assert self.data_opts["resolution"][0] % 32 == 0 and self.data_opts["resolution"][1] % 32 == 0
         self.train_loader = create_dataloader(
-            self.data_opts["datapath"], 
-            self.data_opts["name"], 
-            split="train", 
-            batch_size=self.train_opts["batch_size"], 
+            self.data_opts["datapath"],
+            self.data_opts["name"],
+            split="train",
+            batch_size=self.train_opts["batch_size"],
             img_size=self.data_opts["resolution"],
-            num_workers=self.train_opts["num_workers"]
+            num_workers=self.train_opts["num_workers"],
         )
         self.val_loader = create_dataloader(
-            self.data_opts["datapath"], 
-            self.data_opts["name"], 
-            split="val", 
-            batch_size=self.train_opts["batch_size"], 
+            self.data_opts["datapath"],
+            self.data_opts["name"],
+            split="val",
+            batch_size=self.train_opts["batch_size"],
             img_size=self.data_opts["resolution"],
-            num_workers=self.train_opts["num_workers"]
+            num_workers=self.train_opts["num_workers"],
         )
 
         # Define model
@@ -117,8 +119,9 @@ class Trainer:
     def save_model(self):
         weight_save_dir = os.path.join(self.save_dir, "model")
         weight_save_path = os.path.join(weight_save_dir, "weights_{}.pth".format(self.epoch))
-        
-        if not os.path.exists(weight_save_dir): os.makedirs(weight_save_dir)
+
+        if not os.path.exists(weight_save_dir):
+            os.makedirs(weight_save_dir)
         torch.save(self.model.state_dict(), weight_save_path)
 
         optim_save_path = os.path.join(weight_save_dir, "adam_.pth".format(self.epoch))
