@@ -92,7 +92,7 @@ def create_dataloader(
     img_size=(360, 640),
     mask_suffix="",
     mask_ext=".png",
-    num_workers=2
+    num_workers=2,
 ):
     transform = transforms.Compose([transforms.Resize(img_size), transforms.ToTensor()])
     mask_transform = transforms.Compose([transforms.Resize(img_size), transforms.ToTensor()])
@@ -108,7 +108,7 @@ def create_dataloader(
     return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     # SAMPLE WORKFLOW
 
     # Set a fixed size for all images and masks
@@ -116,21 +116,15 @@ if __name__=="__main__":
 
     # COCO Dataset Loaders
     coco_root_dir = "coco"
-    coco_loader_train = create_dataloader(
-        coco_root_dir, "COCO", split="train", img_size=fixed_size
-    )
+    coco_loader_train = create_dataloader(coco_root_dir, "COCO", split="train", img_size=fixed_size)
 
-    coco_loader_val = create_dataloader(
-        coco_root_dir, "COCO", split="val", img_size=fixed_size
-    )
+    coco_loader_val = create_dataloader(coco_root_dir, "COCO", split="val", img_size=fixed_size)
 
     coco_loader_test = create_dataloader(coco_root_dir, "COCO", split="test", img_size=fixed_size)
 
     # Pascal VOC Dataset Loaders
     voc_root_dir = "voc"
-    voc_loader_train = create_dataloader(
-        voc_root_dir, "VOC", split="train", img_size=fixed_size
-    )
+    voc_loader_train = create_dataloader(voc_root_dir, "VOC", split="train", img_size=fixed_size)
 
     # Pascal VOC Dataset Loaders, no test set
     voc_root_dir = "voc"
@@ -148,17 +142,13 @@ if __name__=="__main__":
 
     # MSD Brain Tumor Dataset Loaders
     brain_root_dir = "msd_brain"
-    brain_loader_train = create_dataloader(
-        brain_root_dir, "BRAIN", split="train", img_size=fixed_size
-    )
+    brain_loader_train = create_dataloader(brain_root_dir, "BRAIN", split="train", img_size=fixed_size)
 
     brain_loader_test = create_dataloader(brain_root_dir, "BRAIN", split="test", img_size=fixed_size)
 
     # MSD Heart Dataset Loaders
     heart_root_dir = "msd_heart"
-    heart_loader_train = create_dataloader(
-        heart_root_dir, "HEART", split="train", img_size=fixed_size
-    )
+    heart_loader_train = create_dataloader(heart_root_dir, "HEART", split="train", img_size=fixed_size)
 
     heart_loader_test = create_dataloader(heart_root_dir, "HEART", split="test", img_size=fixed_size)
 
@@ -174,7 +164,6 @@ if __name__=="__main__":
 
     # Verifying the Dataloader Outputs
     import matplotlib.pyplot as plt
-
 
     def verify_dataloader(dataloader, name, num_samples=4):
         for batch in dataloader:
@@ -202,7 +191,6 @@ if __name__=="__main__":
             plt.tight_layout()
             plt.show()
             break  # Only verify the first batch
-
 
     # Verify each dataloader
     verify_dataloader(coco_loader_train, "COCO Train")

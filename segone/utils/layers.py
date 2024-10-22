@@ -104,4 +104,3 @@ class PixelUnshuffle(nn.Module):
     def forward(self, x):
         x = self.unshuffle(x)
         return x
-
