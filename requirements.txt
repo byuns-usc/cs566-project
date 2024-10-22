@@ -32,6 +32,7 @@ sympy
 tensorboardX
 torch
 torchvision
+tqdm
 typing_extensions
 tzdata
 urllib3

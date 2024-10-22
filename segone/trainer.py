@@ -1,8 +1,10 @@
 import os
 import time
 
+from tqdm import tqdm
 import numpy as np
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from ruamel.yaml import YAML
@@ -12,16 +14,15 @@ from torch.utils.data import DataLoader
 from datasets.dataloaders import create_dataloader
 from segone.networks.segone_network import SegOne
 from segone.networks.common_network import CommonNet
-from segone.utils.layers import calculate_losses
 
 
 class Trainer:
     available_datasets = ("COCO", "VOC", "PET", "BRAIN", "HEART")
-    available_models = {"SEGONE": (OneEncoder, SegDecoder), 
-                        "RESNET": (R), 
-                        "UNET", 
-                        "SKIPINIT", 
-                        "EUNNET"}
+    available_models = {"SEGONE": SegOne, 
+                        "RESNET": CommonNet, 
+                        "UNET": CommonNet, 
+                        "SKIPINIT": CommonNet, 
+                        "EUNNET": CommonNet}
 
     def __init__(self, opts):
         self.data_opts = opts["data"]
@@ -33,17 +34,36 @@ class Trainer:
         # Load Data
         assert self.data_opts["name"] in self.available_datasets
         assert self.data_opts["resolution"][0] % 32 == 0 and self.data_opts["resolution"][1] % 32 == 0
-        self.train_loader = create_dataloader(self.data_opts["datapath"], self.data_opts["name"], split="train", img_size=self.data_opts["resolution"])
-        self.val_loader = create_dataloader(self.data_opts["datapath"], self.data_opts["name"], split="val", img_size=self.data_opts["resolution"])
+        self.train_loader = create_dataloader(
+            self.data_opts["datapath"], 
+            self.data_opts["name"], 
+            split="train", 
+            batch_size=self.train_opts["batch_size"], 
+            img_size=self.data_opts["resolution"],
+            num_workers=self.train_opts["num_workers"]
+        )
+        self.val_loader = create_dataloader(
+            self.data_opts["datapath"], 
+            self.data_opts["name"], 
+            split="val", 
+            batch_size=self.train_opts["batch_size"], 
+            img_size=self.data_opts["resolution"],
+            num_workers=self.train_opts["num_workers"]
+        )
 
-        # TODO Define model
+        # Define model
         assert self.model_opts["name"] in self.available_models
-        model = 
+        self.model = self.available_models[self.model_opts["name"]](self.model_opts)
+
+        # If pretrain model exists, load
         if self.train_opts["load_weights"] is not None:
             self.load_model()
+        elif self.train_opts["load_encoder"] is not None:
+            self.load_encoder()
 
         # Set training params
         self.optim = optim.Adam(self.model.parameters(), self.train_opts["learning_rate"])
+        self.criteria = nn.CrossEntropyLoss()
         self.lr_scheduler = optim.lr_scheduler.StepLR(self.optim, self.train_opts["lr_step"], 0.1)
 
         # Make dir and save options used
@@ -53,22 +73,29 @@ class Trainer:
             yaml = YAML()
             yaml.dump(opts, f)
 
+    def process_batch(self, inputs):
+        images, targets = inputs
+        outputs = self.model(images)
+        losses = self.criteria(outputs, targets)
+
+        outputs, losses
+
     def train(self):
         self.model.train()
+        for self.epoch in range(self.train_opts["epoch"]):
+            self.lr_scheduler.step()
 
-        for self.epoch in range(self.opt.num_epochs):
-            self.model_lr_scheduler.step()
-
-            for batch_idx, inputs in enumerate(self.train_loader):
+            for batch_idx, inputs in tqdm(enumerate(self.train_loader)):
                 outputs, losses = self.process_batch(inputs)
-
                 self.model_optimizer.zero_grad()
                 losses.backward()
                 self.model_optimizer.step()
 
-            self.val()
+            val_losses = self.val()
 
-            if (self.epoch + 1) % self.opt.save_frequency == 0:
+            print(f"Train loss: {losses}, Val loss: {val_losses}")
+
+            if (self.epoch + 1) % self.train_opts["save_frequency"] == 0:
                 self.save_model()
 
     def val(self):
@@ -82,54 +109,47 @@ class Trainer:
 
         with torch.no_grad():
             outputs, losses = self.process_batch(inputs)
-            del inputs, outputs, losses
+            del inputs, outputs
 
         self.model.train()
-
-    def compute_losses(self, inputs, outputs):
-        """Compute the reprojection and smoothness losses for a minibatch"""
-        losses = {}
-
         return losses
 
     def save_model(self):
-        save_folder = os.path.join(self.log_path, "models", "weights_{}".format(self.epoch))
-        if not os.path.exists(save_folder):
-            os.makedirs(save_folder)
+        weight_save_dir = os.path.join(self.save_dir, "model")
+        weight_save_path = os.path.join(weight_save_dir, "weights_{}.pth".format(self.epoch))
+        
+        if not os.path.exists(weight_save_dir): os.makedirs(weight_save_dir)
+        torch.save(self.model.state_dict(), weight_save_path)
 
-        for model_name, model in self.models.items():
-            save_path = os.path.join(save_folder, "{}.pth".format(model_name))
-            to_save = model.state_dict()
-            if model_name == "encoder":
-                # save the sizes - these are needed at prediction time
-                to_save["height"] = self.opt.height
-                to_save["width"] = self.opt.width
-                to_save["use_stereo"] = self.opt.use_stereo
-            torch.save(to_save, save_path)
-
-        save_path = os.path.join(save_folder, "{}.pth".format("adam"))
-        torch.save(self.model_optimizer.state_dict(), save_path)
+        optim_save_path = os.path.join(weight_save_dir, "adam_.pth".format(self.epoch))
+        torch.save(self.optim.state_dict(), optim_save_path)
 
     def load_model(self):
-        self.opt.load_weights_folder = os.path.expanduser(self.opt.load_weights_folder)
-
-        assert os.path.isdir(self.opt.load_weights_folder), "Cannot find folder {}".format(self.opt.load_weights_folder)
-        print("loading model from folder {}".format(self.opt.load_weights_folder))
-
-        for n in self.opt.models_to_load:
-            print("Loading {} weights...".format(n))
-            path = os.path.join(self.opt.load_weights_folder, "{}.pth".format(n))
-            model_dict = self.models[n].state_dict()
-            pretrained_dict = torch.load(path)
+        # Load model weights
+        print(f"Loading weights at {self.train_opts["load_weights"]}")
+        try:
+            self.model.load_state_dict(torch.load(self.train_opts["load_weights"]))
+        except:
+            model_dict = self.model.state_dict()
+            pretrained_dict = torch.load(self.train_opts["load_weights"])
             pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
             model_dict.update(pretrained_dict)
-            self.models[n].load_state_dict(model_dict)
+            self.model.load_state_dict(model_dict)
 
-        # loading adam state
-        optimizer_load_path = os.path.join(self.opt.load_weights_folder, "adam.pth")
-        if os.path.isfile(optimizer_load_path):
-            print("Loading Adam weights")
-            optimizer_dict = torch.load(optimizer_load_path)
-            self.model_optimizer.load_state_dict(optimizer_dict)
+        # Load optimizer
+        if self.train_opts["load_optimizer"] is not None:
+            print(f"Loading optimizer at {self.train_opts["load_optimizer"]}")
+            self.optim.load_state_dict(torch.load(self.train_opts["load_optimizer"]))
         else:
-            print("Cannot find Adam weights so Adam is randomly initialized")
+            print("Warning: loading weights without optimizer")
+
+    def load_encoder(self):
+        print(f"Loading encoder weights at {self.train_opts["load_encoder"]}")
+        try:
+            self.model.encoder.load_state_dict(torch.load(self.train_opts["load_encoder"]))
+        except:
+            encoder_dict = self.model.encoder.state_dict()
+            pretrained_dict = torch.load(self.train_opts["load_encoder"])
+            pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in encoder_dict}
+            encoder_dict.update(pretrained_dict)
+            self.model.encoder.load_state_dict(encoder_dict)

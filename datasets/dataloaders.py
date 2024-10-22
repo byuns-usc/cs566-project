@@ -92,6 +92,7 @@ def create_dataloader(
     img_size=(360, 640),
     mask_suffix="",
     mask_ext=".png",
+    num_workers=2
 ):
     transform = transforms.Compose([transforms.Resize(img_size), transforms.ToTensor()])
     mask_transform = transforms.Compose([transforms.Resize(img_size), transforms.ToTensor()])
@@ -104,7 +105,7 @@ def create_dataloader(
         mask_suffix=mask_suffix,
         mask_ext=mask_ext,
     )
-    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 
 
 if __name__=="__main__":
