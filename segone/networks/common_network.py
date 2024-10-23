@@ -19,11 +19,8 @@ class CommonNet(nn.Module):
         # "EUNNET": EUNEncoder,
     }
 
-    decoder_types = {
-        "segmentation": CommonSegDecoder,
-        "classification": CommonSegDecoder
-    }
-    
+    decoder_types = {"segmentation": CommonSegDecoder, "classification": CommonSegDecoder}
+
     def __init__(self, opts):
         super(CommonNet, self).__init__()
         self.opts = opts

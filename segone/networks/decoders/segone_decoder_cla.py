@@ -22,9 +22,9 @@ class ClaDecoder(nn.Module):
         self.conv = Conv1DBlock(
             kernel_size=self.channel_enc[-1],
             out_channels=self.channel_enc[-1],
-            stride = self.channel_enc[-1],
+            stride=self.channel_enc[-1],
             use_relu=False,
-            use_pad=False
+            use_pad=False,
         )
 
         self.head = nn.AdaptiveAvgPool2d((1, 1))

@@ -63,7 +63,7 @@ class Bottleneck(nn.Module):
                     in_channels if i == 0 else out_channels,
                     out_channels=out_channels,
                     stride=in_channels if i == 0 else out_channels,
-                    use_pad=False
+                    use_pad=False,
                 )
                 for i in range(repeat)
             ]
@@ -93,15 +93,26 @@ class OneEncoder(nn.Module):
         self.channels = [(2**i) * self.opts["bottleneck_channel"] for i in range(self.opts["num_layers"] + 1)]
 
         # Initialize Layers
-        self.bottleneck = Bottleneck(scale=self.opts["bottleneck_scale"], repeat=self.opts["bottleneck_repeat"], in_channels=self.opts["channel_in"], out_channels=self.opts["bottleneck_channel"])
+        self.bottleneck = Bottleneck(
+            scale=self.opts["bottleneck_scale"],
+            repeat=self.opts["bottleneck_repeat"],
+            in_channels=self.opts["channel_in"],
+            out_channels=self.opts["bottleneck_channel"],
+        )
         self.convs = nn.ModuleDict()
         for i in range(self.opts["num_layers"]):
             self.convs[f"spatial_{i}"] = Conv1DBlock(kernel_size=self.opts["kernel_size"])
             self.convs[f"channel_1_{i}"] = Conv1DBlock(
-                kernel_size=2 * self.channels[i + 1], out_channels=self.channels[i + 1], stride=2 * self.channels[i + 1], use_pad=False
+                kernel_size=2 * self.channels[i + 1],
+                out_channels=self.channels[i + 1],
+                stride=2 * self.channels[i + 1],
+                use_pad=False,
             )
             self.convs[f"channel_2_{i}"] = Conv1DBlock(
-                kernel_size=self.channels[i + 1], out_channels=self.channels[i + 1], stride=self.channels[i + 1], use_pad=False
+                kernel_size=self.channels[i + 1],
+                out_channels=self.channels[i + 1],
+                stride=self.channels[i + 1],
+                use_pad=False,
             )
         self.downsample = PixelUnshuffle(scale=2)
         # self.pool = Pool1D(kernel_size=self.opts['pool_kernel_size'])

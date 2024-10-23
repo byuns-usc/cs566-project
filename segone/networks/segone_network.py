@@ -9,10 +9,7 @@ from segone.utils.layers import *
 
 class SegOne(nn.Module):
 
-    decoder_types = {
-        "segmentation": SegDecoder,
-        "classification": ClaDecoder
-    }
+    decoder_types = {"segmentation": SegDecoder, "classification": ClaDecoder}
 
     def __init__(self, opts):
         super(SegOne, self).__init__()

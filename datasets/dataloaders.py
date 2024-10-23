@@ -4,6 +4,7 @@ from torchvision import transforms
 from PIL import Image
 import json
 
+
 # Image-Mask Dataset Class
 class ImageMaskDataset(Dataset):
     def __init__(
@@ -45,7 +46,7 @@ class ImageMaskDataset(Dataset):
 
     def __len__(self):
         return len(self.image_files)
-    
+
     def get_label_mapping(self):
         return [(key, value) for key, value in self.normalized_mask_labels.items()]
 
@@ -107,7 +108,7 @@ def create_dataloader(
 if __name__ == "__main__":
     # SAMPLE WORKFLOW
 
-    os.chdir('data')
+    os.chdir("data")
 
     # Set a fixed size for all images and masks
     fixed_size = (360, 640)  # (height, width)
@@ -126,17 +127,13 @@ if __name__ == "__main__":
 
     # Pascal VOC Dataset Loaders, no test set
     voc_root_dir = "voc"
-    voc_loader_train = create_dataloader(
-        voc_root_dir, "VOC", split="train", img_size=fixed_size
-    )
+    voc_loader_train = create_dataloader(voc_root_dir, "VOC", split="train", img_size=fixed_size)
 
     voc_loader_test = create_dataloader(voc_root_dir, "VOC", split="test", img_size=fixed_size)
 
     # Oxford-IIIT Pet Dataset Loaders (trainval folder for both train and val)
     pets_root_dir = "oxford_pet"
-    pets_loader_train = create_dataloader(
-        pets_root_dir, "PET", split="train", img_size=fixed_size
-    )
+    pets_loader_train = create_dataloader(pets_root_dir, "PET", split="train", img_size=fixed_size)
 
     # MSD Brain Tumor Dataset Loaders
     brain_root_dir = "msd_brain"
