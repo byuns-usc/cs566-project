@@ -129,7 +129,7 @@ if __name__ == "__main__":
     # Pascal VOC Dataset Loaders, no test set
     voc_root_dir = "voc"
     voc_loader_train = create_dataloader(
-        voc_root_dir, "VOC", split="train", transform=transform, mask_transform=mask_transform
+        voc_root_dir, "VOC", split="train", img_size=fixed_size
     )
 
     voc_loader_test = create_dataloader(voc_root_dir, "VOC", split="test", img_size=fixed_size)
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     # Oxford-IIIT Pet Dataset Loaders (trainval folder for both train and val)
     pets_root_dir = "oxford_pet"
     pets_loader_train = create_dataloader(
-        pets_root_dir, "PET", split="train", transform=transform, mask_transform=mask_transform
+        pets_root_dir, "PET", split="train", img_size=fixed_size
     )
 
     # MSD Brain Tumor Dataset Loaders

@@ -37,8 +37,12 @@ def channel_recover(x, h, w):
 class Conv1DBlock(nn.Module):
     """Layer to pad and convolve input Bx1xHWC -> Bx1xHWC or BxCxHW"""
 
-    def __init__(self, kernel_size, out_channels=1, stride=1, use_refl=True):
+    def __init__(self, kernel_size, out_channels=1, stride=1, use_refl=True, use_relu=True, use_pad=True):
         super(Conv1DBlock, self).__init__()
+
+        self.use_relu = use_relu
+        self.use_pad = use_pad
+
         if use_refl:
             self.pad = nn.ReflectionPad1d(kernel_size // 2)
         else:
@@ -47,10 +51,11 @@ class Conv1DBlock(nn.Module):
         self.relu = nn.ReLU()
 
     def forward(self, x):
-        print(x.size())
-        x = self.pad(x)
+        if self.use_pad:
+            x = self.pad(x)
         x = self.conv(x)
-        x = self.relu(x)
+        if self.use_relu:
+            x = self.relu(x)
         return x
 
 
@@ -104,3 +109,4 @@ class PixelUnshuffle(nn.Module):
     def forward(self, x):
         x = self.unshuffle(x)
         return x
+

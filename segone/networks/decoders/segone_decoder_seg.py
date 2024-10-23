@@ -23,29 +23,31 @@ class SegDecoder(nn.Module):
         self.convs = nn.ModuleDict()
         for i in range(self.len_ch_enc - 1, 0, -1):
             self.convs[f"channel_1_{i}"] = Conv1DBlock(
-                kernel_size=self.channel_enc[i], out_channels=2 * self.channel_enc[i], stride=self.channel_enc[i]
+                kernel_size=self.channel_enc[i], out_channels=2 * self.channel_enc[i], stride=self.channel_enc[i], use_pad=False
             )
             self.convs[f"channel_2_{i}"] = Conv1DBlock(
                 kernel_size=2 * self.channel_enc[i - 1],
                 out_channels=2 * self.channel_enc[i - 1],
                 stride=2 * self.channel_enc[i - 1],
+                use_pad=False
             )
             self.convs[f"spatial_{i}"] = Conv1DBlock(kernel_size=self.opts["kernel_size"])
             self.convs[f"head_{i}"] = Conv1DBlock(
                 kernel_size=2 * self.channel_enc[i - 1],
                 out_channels=self.opts["channel_out"],
                 stride=2 * self.channel_enc[i - 1],
+                use_relu=False,
+                use_pad=False
             )
 
         self.upsample = PixelShuffle(scale=2)
-        self.sigmoid = nn.Sigmoid()
 
     def forward(self, features_enc):
         self.outputs = []
 
         x = features_enc[-1]
         x, _ = spatial_flatten(x)
-        for i in range(self.len_ch_enc - 1, -1, -1):
+        for i in range(self.len_ch_enc - 1, 0, -1):
             x = self.convs[f"channel_1_{i}"](x)
             x = channel_recover(x, h, w)
             x = self.upsample(x)
