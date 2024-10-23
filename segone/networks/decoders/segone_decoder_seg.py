@@ -22,9 +22,14 @@ class SegDecoder(nn.Module):
         # Initialize Layers
         self.convs = nn.ModuleDict()
         for i in range(self.len_ch_enc - 1, 0, -1):
-            self.convs[f"channel_1_{i}"] = Conv1DBlock(
-                kernel_size=self.channel_enc[i], out_channels=2 * self.channel_enc[i], stride=self.channel_enc[i], use_pad=False
-            )
+            if i== self.len_ch_enc-1:
+                self.convs[f"channel_1_{i}"] = Conv1DBlock(
+                    kernel_size=self.channel_enc[i], out_channels=2 * self.channel_enc[i], stride=self.channel_enc[i], use_pad=False
+                )
+            else:
+                self.convs[f"channel_1_{i}"] = Conv1DBlock(
+                    kernel_size=2 * self.channel_enc[i], out_channels=2 * self.channel_enc[i], stride=2 * self.channel_enc[i], use_pad=False
+                )
             self.convs[f"channel_2_{i}"] = Conv1DBlock(
                 kernel_size=2 * self.channel_enc[i - 1],
                 out_channels=2 * self.channel_enc[i - 1],
@@ -46,15 +51,17 @@ class SegDecoder(nn.Module):
         self.outputs = []
 
         x = features_enc[-1]
-        x, _ = spatial_flatten(x)
+        x, (_, _, h, w) = spatial_flatten(x)
         for i in range(self.len_ch_enc - 1, 0, -1):
             x = self.convs[f"channel_1_{i}"](x)
             x = channel_recover(x, h, w)
-            x = self.upsample(x)
+            x = [self.upsample(x)]
+            x += [features_enc[i-1]]
+            x = torch.cat(x, 1)
             x, (_, _, h, w) = spatial_flatten(x)
             x = self.convs[f"channel_2_{i}"](x)
             x = channel_flatten(x)
-            self.outputs.insert(0, self.channel_recover(self.convs[f"head_{i}"](x), h, w))
+            self.outputs.insert(0, channel_recover(self.convs[f"head_{i}"](x), h, w))
             x = self.convs[f"spatial_{i}"](x)
 
         return self.outputs
