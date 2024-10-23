@@ -3,8 +3,9 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from PIL import Image
 import json
-
-
+from torch.nn import functional as F
+import torch
+import numpy as np
 # Image-Mask Dataset Class
 class ImageMaskDataset(Dataset):
     def __init__(
@@ -43,7 +44,7 @@ class ImageMaskDataset(Dataset):
             self.normalized_mask_labels = {
                 key: [float(val) / 255.0 for val in value] for key, value in self.mask_labels.items()
             }
-
+            self.num_classes = len(self.normalized_mask_labels)
     def __len__(self):
         return len(self.image_files)
 
@@ -54,29 +55,69 @@ class ImageMaskDataset(Dataset):
         img_name = self.image_files[idx]
         img_path = os.path.join(self.image_dir, img_name)
 
+        # Open the image and convert to RGB
         image = Image.open(img_path).convert("RGB")
 
-        # If it's a test split, return only the image
+        # Handle test split: return only the transformed image
         if self.split == "test":
             if self.transform:
                 image = self.transform(image)
             return image
 
-        # For train and val, return image, mask, and labels
+        # For train/val: Load the mask
         base_name = os.path.splitext(img_name)[0]
         mask_name = f"{base_name}{self.mask_suffix}{self.mask_ext}"
         mask_path = os.path.join(self.mask_dir, mask_name)
-
-        # Handle masks depending on the dataset
-        if "HEART" in self.dataset_name or "BRAIN" in self.dataset_name:
-            mask = Image.open(mask_path).convert("L")  # Integer mask for these datasets
-        else:
-            mask = Image.open(mask_path).convert("RGB")  # For RGB-based datasets like COCO or VOC
-
-        image = self.transform(image)
+        # Open the mask and determine if it is RGB or grayscale
+        mask = Image.open(mask_path)
         mask = self.mask_transform(mask)
+        if mask.shape[0] == 3:
+            # Convert RGB mask to integer-labeled mask
+            mask_np = np.array(mask)
+            mask_labeled = self.rgb_to_label(mask_np)
+        else:
+            # Grayscale masks are already labeled correctly
+            mask_np = np.array(mask)
+            mask_labeled = self.grayscale_to_label(mask_np)
+        # Apply transformations to the image
+        if self.transform:
+            image = self.transform(image)
 
-        return image, mask
+        # Convert mask to PyTorch tensor and ensure it is of type long
+        mask_labeled = torch.tensor(mask_labeled, dtype=torch.long)
+
+        # One-hot encode the mask and ensure the shape is correct
+        one_hot_mask = F.one_hot(mask_labeled, num_classes=self.num_classes)
+        one_hot_mask = one_hot_mask.permute(2, 0, 1)  # (num_classes, H, W)
+
+        return image, one_hot_mask  # No need for unnecessary squeezing or unsqueezing
+
+    def rgb_to_label(self, mask_np):
+        """Convert an RGB mask to an integer-labeled mask."""
+        label_mask = np.zeros((mask_np.shape[1], mask_np.shape[2]), dtype=np.int64)
+        mask_np = np.transpose(mask_np, (1, 2, 0))
+        for idx, (class_name, rgb_value) in enumerate(self.normalized_mask_labels.items()):
+            # Check where the mask matches the current class's RGB value
+            matches = np.all(mask_np == (np.array(rgb_value)).astype(np.uint8), axis=-1)
+            label_mask[matches] = idx
+
+        return label_mask
+
+    def grayscale_to_label(self, mask_np):
+        """Convert a grayscale mask (1, H, W) to a 2D integer-labeled mask (H, W) based on label mapping."""
+        # Remove the channel dimension if it exists (from (1, H, W) -> (H, W))
+        if len(mask_np.shape) == 3 and mask_np.shape[0] == 1:
+            mask_np = np.squeeze(mask_np, axis=0)
+
+        # Initialize a label mask with the same shape as the grayscale mask
+        label_mask = np.zeros_like(mask_np, dtype=np.int64)
+
+        # Map grayscale values to class indices using the label mapping
+        for idx, (class_name, gray_value) in enumerate(self.normalized_mask_labels.items()):
+            # Assign the class index where the grayscale value matches
+            label_mask[mask_np == int(gray_value[0])] = idx
+
+        return torch.tensor(label_mask, dtype=torch.long)
 
 
 # Dataloader Creation Function
@@ -121,19 +162,18 @@ if __name__ == "__main__":
 
     coco_loader_test = create_dataloader(coco_root_dir, "COCO", split="test", img_size=fixed_size)
 
-    # Pascal VOC Dataset Loaders
-    voc_root_dir = "voc"
-    voc_loader_train = create_dataloader(voc_root_dir, "VOC", split="train", img_size=fixed_size)
-
     # Pascal VOC Dataset Loaders, no test set
     voc_root_dir = "voc"
     voc_loader_train = create_dataloader(voc_root_dir, "VOC", split="train", img_size=fixed_size)
 
-    voc_loader_test = create_dataloader(voc_root_dir, "VOC", split="test", img_size=fixed_size)
+    voc_loader_val = create_dataloader(voc_root_dir, "VOC", split="val", img_size=fixed_size)
+
 
     # Oxford-IIIT Pet Dataset Loaders (trainval folder for both train and val)
     pets_root_dir = "oxford_pet"
     pets_loader_train = create_dataloader(pets_root_dir, "PET", split="train", img_size=fixed_size)
+
+    pets_loader_test = create_dataloader(pets_root_dir, "PET", split="test", img_size=fixed_size)
 
     # MSD Brain Tumor Dataset Loaders
     brain_root_dir = "msd_brain"
@@ -152,25 +192,36 @@ if __name__ == "__main__":
 
     def verify_dataloader(dataloader, name, num_samples=4):
         for batch in dataloader:
+            # Check if it's a list and contains images + masks (train/val case)
             if isinstance(batch, list) and len(batch) == 2:
-                images, masks = batch
-                print(f"{name} Dataloader: Image batch shape: {images.shape}, Mask batch shape: {masks.shape}")
+                images, one_hot_masks = batch
+                print(f"{name} Dataloader: Image batch shape: {images.shape}, Mask batch shape: {one_hot_masks.shape}")
+
+                # Assertions to verify one-hot encoding is valid
+                assert one_hot_masks.dim() == 4, "Expected one-hot masks to have 4 dimensions (batch, num_classes, H, W)."
+                assert one_hot_masks.sum(dim=1).max() == 1, "Invalid one-hot encoding: More than one class per pixel."
+                assert one_hot_masks.sum(dim=1).min() == 1, "Invalid one-hot encoding: No class assigned to some pixels."
+
             else:  # Test case: only images
                 images = batch
-                print(f"{name} Dataloader: Image batch shape: {images.shape}")
+                print(f"{name} Dataloader: Image batch shape: {len(images)} images")
 
             # Display a few samples
             fig, axs = plt.subplots(num_samples, 2, figsize=(10, num_samples * 5))
-            for i in range(num_samples):
+
+            for i in range(min(num_samples, len(images))):
+                # Display the image
                 img = images[i].permute(1, 2, 0).numpy()  # Convert from (C, H, W) to (H, W, C)
                 axs[i, 0].imshow(img)
                 axs[i, 0].set_title("Image")
                 axs[i, 0].axis("off")
 
-                if len(batch) == 3:  # Only display masks for train/val
-                    mask = masks[i].permute(1, 2, 0).numpy()  # Remove channel dimension for mask
-                    axs[i, 1].imshow(mask)
-                    axs[i, 1].set_title("Mask")
+                # Display the mask for train/val
+                if isinstance(batch, list) and len(batch) == 2:
+                    # Convert one-hot mask back to class index mask using argmax
+                    mask = one_hot_masks[i].argmax(dim=0).numpy()  # (H, W)
+                    axs[i, 1].imshow(mask, cmap='tab20')  # Use a categorical colormap
+                    axs[i, 1].set_title("Class Index Mask")
                     axs[i, 1].axis("off")
 
             plt.tight_layout()
