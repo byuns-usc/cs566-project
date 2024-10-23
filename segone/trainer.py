@@ -31,7 +31,7 @@ class Trainer:
         self.train_opts = opts["train"]
         self.model_opts = opts["model"]
 
-        self.device = torch.device("cuda" if self.train_opts.cuda and torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if self.train_opts["cuda"] and torch.cuda.is_available() else "cpu")
 
         # Load Data
         assert self.data_opts["name"] in self.available_datasets
@@ -39,7 +39,7 @@ class Trainer:
         self.train_loader = create_dataloader(
             self.data_opts["datapath"],
             self.data_opts["name"],
-            split="train",
+            split=self.data_opts["train"],
             batch_size=self.train_opts["batch_size"],
             img_size=self.data_opts["resolution"],
             num_workers=self.train_opts["num_workers"],
@@ -47,15 +47,21 @@ class Trainer:
         self.val_loader = create_dataloader(
             self.data_opts["datapath"],
             self.data_opts["name"],
-            split="val",
+            split=self.data_opts["val"],
             batch_size=self.train_opts["batch_size"],
             img_size=self.data_opts["resolution"],
             num_workers=self.train_opts["num_workers"],
         )
 
+        self.val_iter = iter(self.val_loader)
+        inputs = next(self.val_iter)
+        print(len(inputs))
+        print(inputs[0].size())
+
         # Define model
         assert self.model_opts["name"] in self.available_models
         self.model = self.available_models[self.model_opts["name"]](self.model_opts)
+        self.model.to(self.device)
 
         # If pretrain model exists, load
         if self.train_opts["load_weights"] is not None:

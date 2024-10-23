@@ -13,10 +13,10 @@ from segone.utils.layers import *
 class CommonNet(nn.Module):
 
     encoder_types = {
-        "RESNET": ResnetEncoder,
-        "UNET": UnetEncoder,
-        "SKIPINIT": SkipinitEncoder,
-        "EUNNET": EUNEncoder,
+        # "RESNET": ResnetEncoder,
+        # "UNET": UnetEncoder,
+        # "SKIPINIT": SkipinitEncoder,
+        # "EUNNET": EUNEncoder,
     }
 
     decoder_types = {

@@ -1,5 +1,6 @@
 model:
   name: SEGONE
+  type: segmentation
   channel_in: 3
   channel_out: 13
   num_layers: 5
@@ -12,6 +13,8 @@ model:
 data:
   name: HEART
   datapath: ../data/msd_heart
+  train: train
+  val: train
   resolution:
     - 512
     - 512
@@ -19,7 +22,6 @@ data:
 
 train:
   cuda: true
-  type: segmentation
   epoch: 1000
   learning_rate: 0.01
   lr_step: 500

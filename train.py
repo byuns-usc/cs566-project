@@ -16,4 +16,4 @@ if __name__ == "__main__":
         opts = yaml.load(cfg_file)
 
     trainer = Trainer(opts)
-    trainer.train()
+    # trainer.train()

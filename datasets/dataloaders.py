@@ -4,18 +4,15 @@ from torchvision import transforms
 from PIL import Image
 import json
 
-os.chdir("data")
-
-
 # Image-Mask Dataset Class
 class ImageMaskDataset(Dataset):
     def __init__(
         self,
         root_dir,
         dataset_name,
+        transform,
+        mask_transform,
         split="train",
-        transform=None,
-        mask_transform=None,
         mask_suffix="",
         mask_ext=".png",
     ):
@@ -48,6 +45,9 @@ class ImageMaskDataset(Dataset):
 
     def __len__(self):
         return len(self.image_files)
+    
+    def get_label_mapping(self):
+        return [(key, value) for key, value in self.normalized_mask_labels.items()]
 
     def __getitem__(self, idx):
         img_name = self.image_files[idx]
@@ -72,14 +72,10 @@ class ImageMaskDataset(Dataset):
         else:
             mask = Image.open(mask_path).convert("RGB")  # For RGB-based datasets like COCO or VOC
 
-        if self.transform:
-            image = self.transform(image)
-        if self.mask_transform:
-            mask = self.mask_transform(mask)
+        image = self.transform(image)
+        mask = self.mask_transform(mask)
 
-        labels = [(key, value) for key, value in self.normalized_mask_labels.items()]
-
-        return image, mask, labels
+        return image, mask
 
 
 # Dataloader Creation Function
@@ -105,11 +101,13 @@ def create_dataloader(
         mask_suffix=mask_suffix,
         mask_ext=mask_ext,
     )
-    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, pin_memory=True)
 
 
 if __name__ == "__main__":
     # SAMPLE WORKFLOW
+
+    os.chdir('data')
 
     # Set a fixed size for all images and masks
     fixed_size = (360, 640)  # (height, width)
@@ -153,22 +151,12 @@ if __name__ == "__main__":
     heart_loader_test = create_dataloader(heart_root_dir, "HEART", split="test", img_size=fixed_size)
 
     # Verifying the Dataloader Outputs
-    def verify_dataloader(dataloader, name, num_samples=4):
-        for batch in dataloader:
-            if isinstance(batch, list) and len(batch) == 3:
-                images, masks, labels = batch
-                print(f"{name} Dataloader: Image batch shape: {images.shape}, Mask batch shape: {masks.shape}")
-            else:  # Test case: only images
-                images = batch
-                print(f"{name} Dataloader: Image batch shape: {images.shape}")
-
-    # Verifying the Dataloader Outputs
     import matplotlib.pyplot as plt
 
     def verify_dataloader(dataloader, name, num_samples=4):
         for batch in dataloader:
-            if isinstance(batch, list) and len(batch) == 3:
-                images, masks, labels = batch
+            if isinstance(batch, list) and len(batch) == 2:
+                images, masks = batch
                 print(f"{name} Dataloader: Image batch shape: {images.shape}, Mask batch shape: {masks.shape}")
             else:  # Test case: only images
                 images = batch

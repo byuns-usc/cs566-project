@@ -169,3 +169,6 @@ cython_debug/
 
 # Data Used
 data/
+
+# Model Save Path
+exps/
