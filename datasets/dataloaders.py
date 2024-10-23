@@ -6,6 +6,8 @@ import json
 from torch.nn import functional as F
 import torch
 import numpy as np
+
+
 # Image-Mask Dataset Class
 class ImageMaskDataset(Dataset):
     def __init__(
@@ -45,6 +47,7 @@ class ImageMaskDataset(Dataset):
                 key: [float(val) / 255.0 for val in value] for key, value in self.mask_labels.items()
             }
             self.num_classes = len(self.normalized_mask_labels)
+
     def __len__(self):
         return len(self.image_files)
 
@@ -168,7 +171,6 @@ if __name__ == "__main__":
 
     voc_loader_val = create_dataloader(voc_root_dir, "VOC", split="val", img_size=fixed_size)
 
-
     # Oxford-IIIT Pet Dataset Loaders (trainval folder for both train and val)
     pets_root_dir = "oxford_pet"
     pets_loader_train = create_dataloader(pets_root_dir, "PET", split="train", img_size=fixed_size)
@@ -198,9 +200,13 @@ if __name__ == "__main__":
                 print(f"{name} Dataloader: Image batch shape: {images.shape}, Mask batch shape: {one_hot_masks.shape}")
 
                 # Assertions to verify one-hot encoding is valid
-                assert one_hot_masks.dim() == 4, "Expected one-hot masks to have 4 dimensions (batch, num_classes, H, W)."
+                assert (
+                    one_hot_masks.dim() == 4
+                ), "Expected one-hot masks to have 4 dimensions (batch, num_classes, H, W)."
                 assert one_hot_masks.sum(dim=1).max() == 1, "Invalid one-hot encoding: More than one class per pixel."
-                assert one_hot_masks.sum(dim=1).min() == 1, "Invalid one-hot encoding: No class assigned to some pixels."
+                assert (
+                    one_hot_masks.sum(dim=1).min() == 1
+                ), "Invalid one-hot encoding: No class assigned to some pixels."
 
             else:  # Test case: only images
                 images = batch
@@ -220,7 +226,7 @@ if __name__ == "__main__":
                 if isinstance(batch, list) and len(batch) == 2:
                     # Convert one-hot mask back to class index mask using argmax
                     mask = one_hot_masks[i].argmax(dim=0).numpy()  # (H, W)
-                    axs[i, 1].imshow(mask, cmap='tab20')  # Use a categorical colormap
+                    axs[i, 1].imshow(mask, cmap="tab20")  # Use a categorical colormap
                     axs[i, 1].set_title("Class Index Mask")
                     axs[i, 1].axis("off")
 
