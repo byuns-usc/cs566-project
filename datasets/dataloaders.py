@@ -1,11 +1,13 @@
-import os
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
-from PIL import Image
 import json
-from torch.nn import functional as F
-import torch
+import os
+
+import matplotlib.pyplot as plt
 import numpy as np
+import torch
+from PIL import Image
+from torch.nn import functional as F
+from torch.utils.data import DataLoader, Dataset
+from torchvision import transforms
 
 
 # Image-Mask Dataset Class
@@ -190,8 +192,6 @@ if __name__ == "__main__":
     heart_loader_test = create_dataloader(heart_root_dir, "HEART", split="test", img_size=fixed_size)
 
     # Verifying the Dataloader Outputs
-    import matplotlib.pyplot as plt
-
     def verify_dataloader(dataloader, name, num_samples=4):
         for batch in dataloader:
             # Check if it's a list and contains images + masks (train/val case)

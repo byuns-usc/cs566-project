@@ -1,15 +1,15 @@
-import os
-import requests
-import zipfile
 import json
-import numpy as np
-from PIL import Image, ImageDraw
+import os
 import random
-import torchvision.transforms as T
-import torchvision.datasets as datasets
 import tarfile
+import zipfile
+
 import nibabel as nib
-import urllib
+import numpy as np
+import requests
+import torchvision.datasets as datasets
+import torchvision.transforms as T
+from PIL import Image, ImageDraw
 
 
 # download and save images based on file name from COCO
@@ -313,7 +313,7 @@ def process_pet_test(pet_dataset, output_dir_images, sample_limit=10):
         img_path = os.path.join(output_dir_images, f"test_{idx}.jpg")
         img.save(img_path)
 
-    print(f"Test Oxford-IIIT Pet images have been saved!")
+    print("Test Oxford-IIIT Pet images have been saved!")
 
 
 # Main function to handle the Oxford-IIIT Pet dataset (trainval + test)
