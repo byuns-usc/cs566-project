@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from segone.utils.common_layers import *
+from segone.utils.common_layers import ConvBlock, upsample
 
 
 class CommonSegDecoder(nn.Module):
