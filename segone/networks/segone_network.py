@@ -1,10 +1,8 @@
-import torch
 import torch.nn as nn
 
-from segone.networks.encoders.segone_encoder import OneEncoder
-from segone.networks.decoders.segone_decoder_seg import SegDecoder
 from segone.networks.decoders.segone_decoder_cla import ClaDecoder
-from segone.utils.layers import *
+from segone.networks.decoders.segone_decoder_seg import SegDecoder
+from segone.networks.encoders.segone_encoder import OneEncoder
 
 
 class SegOne(nn.Module):
