@@ -1,11 +1,9 @@
-import torch
 import torch.nn as nn
 
 from segone.utils.layers import (
     Conv1DBlock,
     PixelShuffle,
     PixelUnshuffle,
-    Pool1D,
     UpScale1D,
     channel_flatten,
     channel_recover,
