@@ -1,13 +1,6 @@
-import torch
 import torch.nn as nn
 
-from segone.networks.encoders.resnet_encoder import *
-from segone.networks.encoders.skipinit_encoder import *
-from segone.networks.encoders.eunnet_encoder import *
-from segone.networks.encoders.unet_encoder import *
 from segone.networks.decoders.common_decoder_seg import CommonSegDecoder
-from segone.networks.decoders.common_decoder_cla import *
-from segone.utils.layers import *
 
 
 class CommonNet(nn.Module):
