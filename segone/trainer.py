@@ -1,19 +1,15 @@
 import os
 import time
 
-from tqdm import tqdm
-import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 from ruamel.yaml import YAML
-from tensorboardX import SummaryWriter
-from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from datasets.dataloaders import create_dataloader
-from segone.networks.segone_network import SegOne
 from segone.networks.common_network import CommonNet
+from segone.networks.segone_network import SegOne
 
 
 class Trainer:
