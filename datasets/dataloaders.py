@@ -139,14 +139,10 @@ def create_dataloader(
     mask_ext=".png",
     num_workers=2,
 ):
-    transform = transforms.Compose([
-        transforms.Resize(img_size), 
-        transforms.ToTensor()
-    ])
-    mask_transform = transforms.Compose([
-        transforms.Resize(img_size, interpolation=transforms.InterpolationMode.NEAREST), 
-        transforms.ToTensor()
-    ])
+    transform = transforms.Compose([transforms.Resize(img_size), transforms.ToTensor()])
+    mask_transform = transforms.Compose(
+        [transforms.Resize(img_size, interpolation=transforms.InterpolationMode.NEAREST), transforms.ToTensor()]
+    )
     dataset = ImageMaskDataset(
         root_dir,
         dataset_name,

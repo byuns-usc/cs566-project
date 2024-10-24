@@ -49,7 +49,7 @@ class Trainer:
             num_workers=self.train_opts["num_workers"],
         )
 
-        self.val_iter=iter(self.val_loader)
+        self.val_iter = iter(self.val_loader)
         val_data = next(self.val_iter)
         print(val_data[1].size())
 
@@ -88,7 +88,8 @@ class Trainer:
     def train(self):
         self.model.train()
         for self.epoch in range(self.train_opts["epoch"]):
-            if self.epoch != 0: self.lr_scheduler.step()
+            if self.epoch != 0:
+                self.lr_scheduler.step()
 
             for batch_idx, inputs in tqdm(enumerate(self.train_loader)):
                 outputs, losses = self.process_batch(inputs)
