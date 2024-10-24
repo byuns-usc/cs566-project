@@ -9,6 +9,7 @@ fsspec
 idna
 Jinja2
 MarkupSafe
+matplotlib
 mccabe
 mpmath
 mypy-extensions
