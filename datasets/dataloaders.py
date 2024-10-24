@@ -89,10 +89,11 @@ class ImageMaskDataset(Dataset):
             image = self.transform(image)
 
         # Convert mask to PyTorch tensor and ensure it is of type long
-        mask_labeled = torch.tensor(mask_labeled, dtype=torch.long)
+        # mask_labeled = torch.tensor(mask_labeled, dtype=torch.long)
+        mask_labeled = mask_labeled.long()
 
         # One-hot encode the mask and ensure the shape is correct
-        one_hot_mask = F.one_hot(mask_labeled, num_classes=self.num_classes)
+        one_hot_mask = F.one_hot(mask_labeled, num_classes=self.num_classes).float()
         one_hot_mask = one_hot_mask.permute(2, 0, 1)  # (num_classes, H, W)
 
         return image, one_hot_mask  # No need for unnecessary squeezing or unsqueezing
@@ -101,12 +102,13 @@ class ImageMaskDataset(Dataset):
         """Convert an RGB mask to an integer-labeled mask."""
         label_mask = np.zeros((mask_np.shape[1], mask_np.shape[2]), dtype=np.int64)
         mask_np = np.transpose(mask_np, (1, 2, 0))
+
         for idx, (class_name, rgb_value) in enumerate(self.normalized_mask_labels.items()):
             # Check where the mask matches the current class's RGB value
             matches = np.all(mask_np == (np.array(rgb_value)).astype(np.uint8), axis=-1)
             label_mask[matches] = idx
 
-        return label_mask
+        return torch.tensor(label_mask, dtype=torch.long)
 
     def grayscale_to_label(self, mask_np):
         """Convert a grayscale mask (1, H, W) to a 2D integer-labeled mask (H, W) based on label mapping."""
@@ -137,8 +139,14 @@ def create_dataloader(
     mask_ext=".png",
     num_workers=2,
 ):
-    transform = transforms.Compose([transforms.Resize(img_size), transforms.ToTensor()])
-    mask_transform = transforms.Compose([transforms.Resize(img_size), transforms.ToTensor()])
+    transform = transforms.Compose([
+        transforms.Resize(img_size), 
+        transforms.ToTensor()
+    ])
+    mask_transform = transforms.Compose([
+        transforms.Resize(img_size, interpolation=transforms.InterpolationMode.NEAREST), 
+        transforms.ToTensor()
+    ])
     dataset = ImageMaskDataset(
         root_dir,
         dataset_name,

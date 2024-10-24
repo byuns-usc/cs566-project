@@ -22,12 +22,12 @@ class Trainer:
         "EUNNET": CommonNet,
     }
 
-    def __init__(self, opts):
+    def __init__(self, opts, cuda):
         self.data_opts = opts["data"]
         self.train_opts = opts["train"]
         self.model_opts = opts["model"]
 
-        self.device = torch.device("cuda" if self.train_opts["cuda"] and torch.cuda.is_available() else "cpu")
+        self.device = torch.device(f"cuda:{cuda}" if self.train_opts["cuda"] and torch.cuda.is_available() else "cpu")
 
         # Load Data
         assert self.data_opts["name"] in self.available_datasets
@@ -49,10 +49,9 @@ class Trainer:
             num_workers=self.train_opts["num_workers"],
         )
 
-        self.val_iter = iter(self.val_loader)
-        inputs = next(self.val_iter)
-        print(len(inputs))
-        print(inputs[0].size())
+        self.val_iter=iter(self.val_loader)
+        val_data = next(self.val_iter)
+        print(val_data[1].size())
 
         # Define model
         assert self.model_opts["name"] in self.available_models
@@ -79,15 +78,17 @@ class Trainer:
 
     def process_batch(self, inputs):
         images, targets = inputs
+        images = images.to(self.device)
+        targets = targets.to(self.device)
         outputs = self.model(images)
-        losses = self.criteria(outputs, targets)
+        losses = self.criteria(outputs[-1], targets)
 
         outputs, losses
 
     def train(self):
         self.model.train()
         for self.epoch in range(self.train_opts["epoch"]):
-            self.lr_scheduler.step()
+            if self.epoch != 0: self.lr_scheduler.step()
 
             for batch_idx, inputs in tqdm(enumerate(self.train_loader)):
                 outputs, losses = self.process_batch(inputs)
@@ -106,10 +107,10 @@ class Trainer:
         self.model.eval()
 
         try:
-            inputs = self.val_iter.next()
+            inputs = next(self.val_iter)
         except StopIteration:
             self.val_iter = iter(self.val_loader)
-            inputs = self.val_iter.next()
+            inputs = next(self.val_iter)
 
         with torch.no_grad():
             outputs, losses = self.process_batch(inputs)
