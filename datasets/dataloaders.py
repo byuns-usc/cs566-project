@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 import cv2
 
+
 # Image-Mask Dataset Class
 class ImageMaskDataset(Dataset):
     def __init__(
@@ -23,7 +24,7 @@ class ImageMaskDataset(Dataset):
         mask_ext=".png",
     ):
         # Handle Oxford-IIIT Pet dataset case
-        
+
         split_dir = split  # Use 'train', 'test', or 'val' for other datasets
 
         # Set the directories based on the split
@@ -71,21 +72,19 @@ class ImageMaskDataset(Dataset):
         # Load the mask from the .npy file
         mask_np = np.load(mask_path)
 
-        # Apply mask transformations 
+        # Apply mask transformations
         resized_mask = cv2.resize(mask_np, (self.size[1], self.size[0]), interpolation=cv2.INTER_NEAREST)
 
         # Convert the mask to a PyTorch tensor
         mask_tensor = torch.tensor(resized_mask, dtype=torch.long)
 
-        
         # Apply transformations to the image
         if self.transform:
             image = self.transform(image)
 
-        
         return image, mask_tensor  # No need for unnecessary squeezing or unsqueezing
 
-    
+
 # Dataloader Creation Function
 def create_dataloader(
     root_dir,
@@ -99,7 +98,7 @@ def create_dataloader(
     num_workers=2,
 ):
     transform = transforms.Compose([transforms.Resize(img_size), transforms.ToTensor()])
-    
+
     dataset = ImageMaskDataset(
         root_dir,
         dataset_name,
@@ -107,7 +106,7 @@ def create_dataloader(
         transform=transform,
         mask_suffix=mask_suffix,
         mask_ext=mask_ext,
-        size = img_size
+        size=img_size,
     )
     return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, pin_memory=True)
 
@@ -165,7 +164,6 @@ if __name__ == "__main__":
             else:  # Test case: only images
                 images = batch
                 print(f"{name} Dataloader: Image batch shape: {len(images)} images")
-
 
     # Verify each dataloader
     verify_dataloader(coco_loader_train, "COCO Train")
