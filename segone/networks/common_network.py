@@ -1,13 +1,15 @@
 import torch.nn as nn
 
+from segone.networks.encoders.unet_encoder import UNetEncoder
+from segone.networks.encoders.resnet_encoder import ResNetEncoder
 from segone.networks.decoders.common_decoder_seg import CommonSegDecoder
 
 
 class CommonNet(nn.Module):
 
     encoder_types = {
-        # "RESNET": ResnetEncoder,
-        # "UNET": UnetEncoder,
+        "RESNET": ResNetEncoder,
+        "UNET": UNetEncoder,
         # "SKIPINIT": SkipinitEncoder,
         # "EUNNET": EUNEncoder,
     }
