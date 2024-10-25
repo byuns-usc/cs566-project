@@ -175,14 +175,14 @@ def COCO():
 
     label_mapping = {category["name"]: category["id"] for category in coco_data["categories"]}
 
-    # Save the label mappings with category names and colors
-    save_label_mappings("coco/train/masks", label_mapping, "Train")
-    save_label_mappings("coco/val/masks", label_mapping, "Val")
-
     # Ensure the same mapping is used for both train and val
     process_coco_split("train", sample_limit=10)
     process_coco_split("val", sample_limit=10)
     process_coco_split("test", sample_limit=10)
+
+    # Save the label mappings with category names and colors
+    save_label_mappings("coco/train/masks", label_mapping, "Train")
+    save_label_mappings("coco/val/masks", label_mapping, "Val")
 
 
 # Process a single VOC split and save images/masks
