@@ -33,6 +33,7 @@ sympy
 tensorboardX
 torch
 torchinfo
+torchmetrics
 torchvision
 tqdm
 typing_extensions
