@@ -11,10 +11,10 @@ model:
   bottleneck_channel: 32
 
 data:
-  name: PET
-  datapath: ../data/oxford_pet
-  train: trainval
-  val: trainval
+  name: HEART
+  datapath: data/msd_heart
+  train: train
+  val: train
   resolution:
     - 512
     - 512
@@ -24,8 +24,8 @@ train:
   epoch: 1000
   learning_rate: 0.003
   lr_step: 500
-  batch_size: 1
-  num_workers: 1
+  batch_size: 16
+  num_workers: 8
   save_dir: exps
   load_weights: null
   load_optimizer: null
