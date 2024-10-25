@@ -41,7 +41,7 @@ class Evaluator:
 
         Args:
             beta (float): Weighting factor for precision and recall; beta < 1 prioritizes precision,
-                          while beta > 1 prioritizes recall.
+            while beta > 1 prioritizes recall.
 
         Returns:
             torch.Tensor: The F-score with the specified beta.
