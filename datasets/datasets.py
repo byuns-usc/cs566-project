@@ -66,7 +66,7 @@ def create_masks(image_info, annotations, output_dir_masks):
 
 
 # process a single COCO split
-def process_coco_split(split, sample_limit=10):
+def process_coco_split(split):
     output_dir_images = f"coco/{split}/images"
     output_dir_masks = f"coco/{split}/masks"
 
@@ -95,8 +95,8 @@ def process_coco_split(split, sample_limit=10):
         with open(annotations_file, "r") as f:
             coco_data = json.load(f)
 
-        # Get the first 10 image data entries
-        images_data = coco_data["images"][:sample_limit]
+        # Get all image data entries
+        images_data = coco_data["images"]
 
         # Create a mapping from image_id to annotation data
         image_id_to_annotations = {}
@@ -176,9 +176,9 @@ def COCO():
     label_mapping = {category["name"]: category["id"] for category in coco_data["categories"]}
 
     # Ensure the same mapping is used for both train and val
-    process_coco_split("train", sample_limit=10)
-    process_coco_split("val", sample_limit=10)
-    process_coco_split("test", sample_limit=10)
+    process_coco_split("train")
+    process_coco_split("val")
+    process_coco_split("test")
 
     # Save the label mappings with category names and colors
     save_label_mappings("coco/train/masks", label_mapping, "Train")
@@ -186,11 +186,11 @@ def COCO():
 
 
 # Process a single VOC split and save images/masks
-def process_voc_split(voc_dataset, output_dir_images, output_dir_masks, split_name, sample_limit=10):
+def process_voc_split(voc_dataset, output_dir_images, output_dir_masks, split_name):
     os.makedirs(output_dir_images, exist_ok=True)
     os.makedirs(output_dir_masks, exist_ok=True)
 
-    for idx in range(sample_limit):
+    for idx in range(len(voc_dataset)):
         # Get the image and mask pair
         img, mask = voc_dataset[idx]
 
@@ -303,13 +303,11 @@ def get_class_names():
     ]
 
 
-def process_pet_split(
-    pet_dataset, class_mapping, output_dir_images, output_dir_masks, split_name, indices, sample_limit=10
-):
+def process_pet_split(pet_dataset, class_mapping, output_dir_images, output_dir_masks, split_name, indices):
     os.makedirs(output_dir_images, exist_ok=True)
     os.makedirs(output_dir_masks, exist_ok=True)
 
-    for idx, dataset_idx in enumerate(indices[:sample_limit]):
+    for idx, dataset_idx in enumerate(indices):
         # Get the image and mask
         img, (category, mask) = pet_dataset[dataset_idx]
 
@@ -484,10 +482,10 @@ def HEART():
     # Filter out hidden files and other system files
     image_paths = sorted(
         [os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith(".nii.gz") and not f.startswith("._")]
-    )[:1]
+    )
     mask_paths = sorted(
         [os.path.join(mask_dir, f) for f in os.listdir(mask_dir) if f.endswith(".nii.gz") and not f.startswith("._")]
-    )[:1]
+    )
 
     # Process the train set (mid 50% slices)
     process_heart_train(image_paths, mask_paths, output_dir_train_images, output_dir_train_masks)
@@ -500,7 +498,7 @@ def HEART():
             for f in os.listdir(image_dir_test)
             if f.endswith(".nii.gz") and not f.startswith("._")
         ]
-    )[:1]
+    )
 
     # Process the test set (all slices, includes masks)
     process_heart_test(image_paths_test, output_dir_test_images)
@@ -620,21 +618,21 @@ def BRAIN():
             for f in os.listdir(image_dir_train)
             if f.endswith(".nii.gz") and not f.startswith("._")
         ]
-    )[:1]
+    )
     mask_paths_train = sorted(
         [
             os.path.join(mask_dir_train, f)
             for f in os.listdir(mask_dir_train)
             if f.endswith(".nii.gz") and not f.startswith("._")
         ]
-    )[:1]
+    )
     image_paths_test = sorted(
         [
             os.path.join(image_dir_test, f)
             for f in os.listdir(image_dir_test)
             if f.endswith(".nii.gz") and not f.startswith("._")
         ]
-    )[:1]
+    )
 
     # Process the train set (all slices)
     process_brain_train(image_paths_train, mask_paths_train, output_dir_train_images, output_dir_train_masks)
