@@ -1,15 +1,16 @@
-import os
-import requests
-import zipfile
 import json
-import numpy as np
-from PIL import Image, ImageDraw
+import os
 import random
-import torchvision.transforms as T
-import torchvision.datasets as datasets
 import tarfile
-import nibabel as nib
 import urllib
+import zipfile
+
+import nibabel as nib
+import numpy as np
+import requests
+import torchvision.datasets as datasets
+import torchvision.transforms as T
+from PIL import Image, ImageDraw
 from skimage.draw import polygon
 from sklearn.model_selection import train_test_split
 
