@@ -1,39 +1,49 @@
+from typing import Any
+
 import torch
 from torch import Tensor
 from torchmetrics.functional import fbeta_score
 from torchmetrics.functional.classification import accuracy
-from torchmetrics.functional.segmentation import mean_iou, generalized_dice_score
+from torchmetrics.functional.segmentation import generalized_dice_score, mean_iou
 
 
 class Evaluator:
-    def __init__(self, y_true: Tensor, y_pred: Tensor, num_classes: int = 2, task="multiclass") -> None:
+    def __init__(self, preds: Tensor, targets: Tensor, num_classes: int = 2) -> None:
         """
         Initialize the Evaluator with ground truth and prediction tensors, dynamically assigning the device.
         This evaluator uses torchmetrics for metric calculations and supports both binary and multiclass data.
 
-        Args:
-            y_true (torch.Tensor): Ground truth mask with class labels (integers for multiclass or binary).
-            y_pred (torch.Tensor): Predicted mask with class labels (integers for multiclass or binary).
+        Attributes:
+            preds (torch.Tensor): Predicted mask with class labels (integers for multiclass or binary).
+            targets (torch.Tensor): Ground truth mask with class labels (integers for multiclass or binary).
             num_classes (int): Number of classes (2 for binary classification).
         """
-        assert y_true.shape == y_pred.shape, "Shape of ground truth and prediction must match"
+        assert preds.shape[0] == targets.shape[0], "Shape of ground truth and prediction must match"
 
         # Dynamically select device based on GPU availability
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        # Assign class attributes
         self.num_classes = num_classes
-        self.task = task
+        self.task = "multiclass"
+        self.input_format = "one-hot"
 
-        self.y_true = y_true.to(self.device)
-        self.y_pred = y_pred.to(self.device)
+        # Convert one-hot encoded predictions to class labels
+        self.y_pred = preds.argmax(dim=1).to(self.device)
+        self.y_true = targets.to(self.device)
 
-    def mIOU(self, **kwargs) -> Tensor:
+        print(self.y_pred.shape, self.y_true.shape)
+
+    def mean_iou(self, **kwargs) -> Tensor:
         """
         Calculate the Mean Intersection over Union (mIOU) using torchmetrics.
 
         Returns:
             torch.Tensor: The mean Intersection over Union (mIOU) score.
         """
-        return mean_iou(self.y_pred, self.y_true, num_classes=self.num_classes, **kwargs)
+        return mean_iou(
+            self.y_pred, self.y_true, num_classes=self.num_classes, input_format=self.input_format, **kwargs
+        )
 
     def f1_score(self, beta: float = 1.0, **kwargs) -> Tensor:
         """
@@ -71,9 +81,11 @@ class Evaluator:
         Returns:
             torch.Tensor: The Dice Similarity Coefficient.
         """
-        return generalized_dice_score(self.y_pred, self.y_true, num_classes=self.num_classes, **kwargs)
+        return generalized_dice_score(
+            self.y_pred, self.y_true, num_classes=self.num_classes, input_format=self.input_format, **kwargs
+        )
 
-    def evaluate_all(self) -> dict[str, float]:
+    def evaluate_all(self) -> dict[str, Any]:
         """
         Calculate all metrics (mIOU, F-score, accuracy, and Dice Similarity) and return as a dictionary.
 
@@ -81,7 +93,7 @@ class Evaluator:
             dict[str, float]: A dictionary containing all evaluation metrics with their respective scores.
         """
         return {
-            "mIOU": self.mIOU(),
+            "mIoU": self.mean_iou(),
             "f1_score": self.f1_score(),
             "accuracy": self.accuracy(),
             "dice_similarity": self.dice_similarity(),
@@ -94,12 +106,15 @@ if __name__ == "__main__":
 
     # Example binary ground truth and prediction tensors
     N = 5  # Number of samples
-    classes = 3  # Number of classes
+    C = 3  # Number of classes
+    H, W = 128, 128  # Spatial dimensions: H*W resolution
 
-    preds = randint(-1, 1, (N, classes, 16, 16))  # 10 samples, 3 classes, 16x16 resolution
-    target = randint(-1, 1, (N, classes, 16, 16))
+    # Predicted one-hot encoded tensor (N, C, H, W)
+    preds = randint(0, 2, (N, C, H, W))
+    # Ground truth label tensor (N, H, W) with values from 0 to C-1
+    target = randint(0, C, (N, H, W))
 
-    evaluator = Evaluator(preds, target, num_classes=3)
+    evaluator = Evaluator(preds, target, num_classes=C)
     results = evaluator.evaluate_all()
 
     for metric, value in results.items():
