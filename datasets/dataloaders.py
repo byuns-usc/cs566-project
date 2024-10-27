@@ -1,6 +1,7 @@
 import json
 import os
 
+import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -8,7 +9,6 @@ from PIL import Image
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
-import cv2
 
 
 # Image-Mask Dataset Class
