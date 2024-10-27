@@ -52,10 +52,13 @@ class Conv1DBlock(nn.Module):
         self.relu = nn.ReLU()
 
     def forward(self, x):
-        if self.use_pad: x = self.pad(x)
+        if self.use_pad:
+            x = self.pad(x)
         x = self.conv(x)
-        if self.out_channels > 1: x = self.bn(x)
-        if self.use_relu: x = self.relu(x)
+        if self.out_channels > 1:
+            x = self.bn(x)
+        if self.use_relu:
+            x = self.relu(x)
         return x
 
 

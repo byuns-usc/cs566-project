@@ -6,10 +6,12 @@ class Bottleneck(nn.Module):
     def __init__(self, channel_in, channel_out, repeat=3):
         super(Bottleneck, self).__init__()
 
-        self.blocks = nn.ModuleList([
-            nn.Conv2d(channel_in if i==0 else channel_out, channel_out, kernel_size=3, padding=1)
-            for i in range(repeat)
-        ])
+        self.blocks = nn.ModuleList(
+            [
+                nn.Conv2d(channel_in if i == 0 else channel_out, channel_out, kernel_size=3, padding=1)
+                for i in range(repeat)
+            ]
+        )
 
     def forward(self, x):
         for block in self.blocks:
