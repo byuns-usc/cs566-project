@@ -158,6 +158,7 @@ class Trainer:
                 outputs, losses = self.process_batch(inputs)
                 total_loss += losses
                 counter += 1
+            self.plot_mask(inputs[0], inputs[1], outputs[-1])
         losses = total_loss/counter
 
         self.model.train()
