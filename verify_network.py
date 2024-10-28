@@ -1,5 +1,5 @@
-import os
 import argparse
+import os
 import time
 
 from torchinfo import summary
@@ -9,11 +9,11 @@ from segone.networks.segone_network import SegOne
 if __name__ == "__main__":
     """Test dummy inputs for structural testing"""
     parser = argparse.ArgumentParser()
-    parser.add_argument('--cuda', type=int, default=0)
-    parser.add_argument('--verbose', type=int, default=1)
+    parser.add_argument("--cuda", type=int, default=0)
+    parser.add_argument("--verbose", type=int, default=1)
     args = parser.parse_args()
 
-    device=f'cuda:{args.cuda}' if args.cuda>-1 else 'cpu'
+    device = f"cuda:{args.cuda}" if args.cuda > -1 else "cpu"
 
     print("Verify SegOne Classification Architecture")
     model = SegOne(
@@ -28,7 +28,7 @@ if __name__ == "__main__":
             "kernel_size": 3,
         }
     ).to(device=device)
-    
+
     start_time = time.time()
     summary(model, input_size=(8, 3, 512, 512), device=device, verbose=args.verbose)
     end_time = time.time()

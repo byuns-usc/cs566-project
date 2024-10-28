@@ -5,9 +5,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from ruamel.yaml import YAML
-from tqdm import tqdm
-
 from tensorboardX import SummaryWriter
+from tqdm import tqdm
 
 from datasets.dataloaders import create_dataloader
 from segone.networks.common_network import CommonNet
@@ -79,8 +78,8 @@ class Trainer:
             yaml.dump(opts, f)
 
         # Loggers
-        self.train_logger = SummaryWriter(os.path.join(self.save_dir, 'train_log'))
-        self.val_logger = SummaryWriter(os.path.join(self.save_dir, 'val_log'))
+        self.train_logger = SummaryWriter(os.path.join(self.save_dir, "train_log"))
+        self.val_logger = SummaryWriter(os.path.join(self.save_dir, "val_log"))
 
     def process_batch(self, inputs):
         images, targets = inputs
@@ -109,8 +108,8 @@ class Trainer:
 
             val_losses = self.val()
 
-            self.train_logger.add_scalar('loss', losses, self.epoch)
-            self.val_logger.add_scalar('loss', losses, self.epoch)
+            self.train_logger.add_scalar("loss", losses, self.epoch)
+            self.val_logger.add_scalar("loss", losses, self.epoch)
             print(f"Train loss: {losses}, Val loss: {val_losses}")
 
             if (self.epoch + 1) % self.train_opts["save_frequency"] == 0:

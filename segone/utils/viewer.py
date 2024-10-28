@@ -1,12 +1,13 @@
-import os
 import argparse
+import os
 
-import torch
 import matplotlib.pyplot
+import torch
 from ruamel.yaml import YAML
 
-from segone.networks.segone_network import SegOne
 from segone.networks.common_network import CommonNet
+from segone.networks.segone_network import SegOne
+
 
 def load_model(model, weight_path):
     print(f"Loading weights at {weight_path}")
@@ -19,7 +20,8 @@ def load_model(model, weight_path):
         model_dict.update(pretrained_dict)
         model.load_state_dict(model_dict)
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     available_models = {
         "SEGONE": SegOne,
         "RESNET": CommonNet,
@@ -29,9 +31,9 @@ if __name__=="__main__":
     }
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--cfg', type=str, required=True)
-    parser.add_argument('--weight', type=str, required=True)
-    parser.add_argument('--cuda', type=int, default=0)
+    parser.add_argument("--cfg", type=str, required=True)
+    parser.add_argument("--weight", type=str, required=True)
+    parser.add_argument("--cuda", type=int, default=0)
     args = parser.parse_args()
 
     with open(args.cfg) as cfg_file:
@@ -40,7 +42,7 @@ if __name__=="__main__":
     model_opts = opts["model"]
     train_opts = opts["train"]
 
-    device = f"cuda:{args.cuda}" if args.cuda>-1 else 'cpu'
+    device = f"cuda:{args.cuda}" if args.cuda > -1 else "cpu"
 
     assert model_opts["name"] in available_models
     assert train_opts["load_weights"] is not None
@@ -48,5 +50,3 @@ if __name__=="__main__":
     model = available_models[model_opts["name"]](model_opts)
     model.to(device)
     load_model(args.weight)
-
-    
