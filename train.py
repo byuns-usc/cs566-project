@@ -1,6 +1,7 @@
 import argparse
 import os
 
+import torch
 from ruamel.yaml import YAML
 
 from segone.trainer import Trainer
@@ -17,4 +18,5 @@ if __name__ == "__main__":
         opts = yaml.load(cfg_file)
 
     trainer = Trainer(opts, args.cuda)
-    # trainer.train()
+    trainer.train()
+    torch.cuda.empty_cache()

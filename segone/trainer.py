@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from ruamel.yaml import YAML
+from tensorboardX import SummaryWriter
 from tqdm import tqdm
 
 from datasets.dataloaders import create_dataloader
@@ -49,9 +50,9 @@ class Trainer:
             num_workers=self.train_opts["num_workers"],
         )
 
-        self.val_iter = iter(self.val_loader)
-        val_data = next(self.val_iter)
-        print(val_data[1].size())
+        # self.val_iter = iter(self.val_loader)
+        # val_data = next(self.val_iter)
+        # print(val_data[0].size())
 
         # Define model
         assert self.model_opts["name"] in self.available_models
@@ -76,29 +77,39 @@ class Trainer:
             yaml = YAML()
             yaml.dump(opts, f)
 
+        # Loggers
+        self.train_logger = SummaryWriter(os.path.join(self.save_dir, "train_log"))
+        self.val_logger = SummaryWriter(os.path.join(self.save_dir, "val_log"))
+
     def process_batch(self, inputs):
         images, targets = inputs
+
         images = images.to(self.device)
-        targets = targets.to(self.device)
         outputs = self.model(images)
+
+        targets = targets.to(self.device)
         losses = self.criteria(outputs[-1], targets)
 
-        outputs, losses
+        return outputs, losses
 
     def train(self):
         self.model.train()
+        self.val_iter = iter(self.val_loader)
+
         for self.epoch in range(self.train_opts["epoch"]):
             if self.epoch != 0:
                 self.lr_scheduler.step()
 
-            for batch_idx, inputs in tqdm(enumerate(self.train_loader)):
+            for inputs in tqdm(self.train_loader):
                 outputs, losses = self.process_batch(inputs)
-                self.model_optimizer.zero_grad()
+                self.optim.zero_grad()
                 losses.backward()
-                self.model_optimizer.step()
+                self.optim.step()
 
             val_losses = self.val()
 
+            self.train_logger.add_scalar("loss", losses, self.epoch)
+            self.val_logger.add_scalar("loss", losses, self.epoch)
             print(f"Train loss: {losses}, Val loss: {val_losses}")
 
             if (self.epoch + 1) % self.train_opts["save_frequency"] == 0:
@@ -128,7 +139,7 @@ class Trainer:
             os.makedirs(weight_save_dir)
         torch.save(self.model.state_dict(), weight_save_path)
 
-        optim_save_path = os.path.join(weight_save_dir, "adam_.pth".format(self.epoch))
+        optim_save_path = os.path.join(weight_save_dir, "adam_{}.pth".format(self.epoch))
         torch.save(self.optim.state_dict(), optim_save_path)
 
     def load_model(self):
