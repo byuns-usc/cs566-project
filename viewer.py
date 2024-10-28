@@ -1,14 +1,14 @@
 import argparse
 import os
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 import torch
 from ruamel.yaml import YAML
 
+from datasets.dataloaders import create_dataloader
 from segone.networks.common_network import CommonNet
 from segone.networks.segone_network import SegOne
-from datasets.dataloaders import create_dataloader
 
 
 def load_model(model, weight_path):
@@ -31,20 +31,20 @@ def plot_mask(images, targets, masks):
     masks = torch.argmax(masks, dim=1).numpy()
 
     fig, axs = plt.subplots(2, 6)
-    cmap = plt.get_cmap('viridis', 38)
+    cmap = plt.get_cmap("viridis", 38)
     for i in range(2):
         for j in range(2):
 
             # print(np.unique(targets[i*2+j], return_counts=True))
             # print(np.unique(masks[i*2+j], return_counts=True))
 
-            axs[i, j*3].imshow(images[i*2+j])
-            axs[i, j*3+1].imshow(targets[i*2+j], cmap=cmap, vmin=0, vmax=38)
-            axs[i, j*3+2].imshow(masks[i*2+j], cmap=cmap, vmin=0, vmax=38)
-            axs[i, j * 3].axis('off')
-            axs[i, j * 3 + 1].axis('off')
-            axs[i, j * 3 + 2].axis('off')
-            
+            axs[i, j * 3].imshow(images[i * 2 + j])
+            axs[i, j * 3 + 1].imshow(targets[i * 2 + j], cmap=cmap, vmin=0, vmax=38)
+            axs[i, j * 3 + 2].imshow(masks[i * 2 + j], cmap=cmap, vmin=0, vmax=38)
+            axs[i, j * 3].axis("off")
+            axs[i, j * 3 + 1].axis("off")
+            axs[i, j * 3 + 2].axis("off")
+
             axs[i, j * 3].set_xticks([])
             axs[i, j * 3].set_yticks([])
             axs[i, j * 3 + 1].set_xticks([])
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     parser.add_argument("--cfg", type=str, required=True)
     parser.add_argument("--weight", type=str, required=True)
     parser.add_argument("--cuda", type=int, default=0)
-    parser.add_argument("--split", type=str, default='val')
+    parser.add_argument("--split", type=str, default="val")
     args = parser.parse_args()
 
     with open(args.cfg) as cfg_file:

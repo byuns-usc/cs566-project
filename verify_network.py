@@ -5,8 +5,8 @@ import time
 import torch
 from torchinfo import summary
 
-from segone.networks.segone_network import SegOne
 from segone.networks.common_network import CommonNet
+from segone.networks.segone_network import SegOne
 
 if __name__ == "__main__":
     """Test dummy inputs for structural testing"""

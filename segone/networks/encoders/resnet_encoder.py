@@ -1,6 +1,6 @@
 import numpy as np
 import torch.nn as nn
-from torchvision.models.resnet import resnet18, resnet34, resnet50, ResNet18_Weights, ResNet34_Weights, ResNet50_Weights
+from torchvision.models.resnet import ResNet18_Weights, ResNet34_Weights, ResNet50_Weights, resnet18, resnet34, resnet50
 
 from segone.utils.common_layers import Bottleneck, ConvBlock
 
@@ -18,13 +18,11 @@ class ResNetEncoder(nn.Module):
         self.num_ch_enc = np.array([64, 64, 128, 256, 512])
 
         # Initialize Layers
-        resnets = {18: resnet18,
-                   34: resnet34,
-                   50: resnet50}
+        resnets = {18: resnet18, 34: resnet34, 50: resnet50}
         weights = {
             18: ResNet18_Weights.IMAGENET1K_V1,
             34: ResNet34_Weights.IMAGENET1K_V1,
-            50: ResNet50_Weights.IMAGENET1K_V1
+            50: ResNet50_Weights.IMAGENET1K_V1,
         }
 
         assert self.opts["num_layers"] in resnets
@@ -50,4 +48,3 @@ class ResNetEncoder(nn.Module):
         self.features.append(self.encoder.layer4(self.features[-1]))
 
         return self.features
-    

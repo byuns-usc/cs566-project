@@ -1,13 +1,13 @@
 import os
 import time
 
+import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from ruamel.yaml import YAML
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
-import matplotlib.pyplot as plt
 
 from datasets.dataloaders import create_dataloader
 from segone.networks.common_network import CommonNet
@@ -98,7 +98,7 @@ class Trainer:
         self.model.train()
         self.val_iter = iter(self.val_loader)
 
-        best_val_loss = float('inf')
+        best_val_loss = float("inf")
         best_model_weights = None
         counter = 0
         patience = 5
@@ -160,7 +160,6 @@ class Trainer:
                 counter += 1
             self.plot_mask(inputs[0], inputs[1], outputs[-1])
         losses = total_loss/counter
-
         self.model.train()
         return losses
 
@@ -213,24 +212,26 @@ class Trainer:
         masks = torch.argmax(masks, dim=1)
 
         fig, axs = plt.subplots(2, 6)
-        cmap = plt.get_cmap('viridis', self.model_opts["channel_out"])
+        cmap = plt.get_cmap("viridis", self.model_opts["channel_out"])
         for i in range(2):
             for j in range(2):
-                axs[i, j*3].imshow(images[i*2+j])
-                axs[i, j*3+1].imshow(targets[i*2+j], cmap=cmap, vmin=0, vmax=self.model_opts["channel_out"])
-                axs[i, j*3+2].imshow(masks[i*2+j], cmap=cmap, vmin=0, vmax=self.model_opts["channel_out"])
-                axs[i, j * 3].axis('off')
-                axs[i, j * 3 + 1].axis('off')
-                axs[i, j * 3 + 2].axis('off')
-                
+                axs[i, j * 3].imshow(images[i * 2 + j])
+                axs[i, j * 3 + 1].imshow(targets[i * 2 + j], cmap=cmap, vmin=0, vmax=self.model_opts["channel_out"])
+                axs[i, j * 3 + 2].imshow(masks[i * 2 + j], cmap=cmap, vmin=0, vmax=self.model_opts["channel_out"])
+                axs[i, j * 3].axis("off")
+                axs[i, j * 3 + 1].axis("off")
+                axs[i, j * 3 + 2].axis("off")
+
                 axs[i, j * 3].set_xticks([])
                 axs[i, j * 3].set_yticks([])
                 axs[i, j * 3 + 1].set_xticks([])
                 axs[i, j * 3 + 1].set_yticks([])
                 axs[i, j * 3 + 2].set_xticks([])
                 axs[i, j * 3 + 2].set_yticks([])
-        plt.axis('off')
+        plt.axis("off")
         plt.xticks([])
         plt.yticks([])
-        fig.savefig(os.path.join(self.save_dir, "images", f"{self.epoch}.png"), dpi=1600, bbox_inches='tight', pad_inches=0)
+        fig.savefig(
+            os.path.join(self.save_dir, "images", f"{self.epoch}.png"), dpi=1600, bbox_inches="tight", pad_inches=0
+        )
         plt.close()
