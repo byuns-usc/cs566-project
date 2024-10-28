@@ -32,9 +32,9 @@ def save_label_mappings(mask_dir, category_mapping, dataset_name):
 
 
 # Create mask files as [H, W] arrays with class indices
-def create_masks(image_info, annotations, output_dir_masks):
-    image_id = image_info["id"]
-    width, height = image_info["width"], image_info["height"]
+def create_masks(image_info, annotations, output_dir_masks, category_id_to_idx):
+    image_id = image_info['id']
+    width, height = image_info['width'], image_info['height']
 
     # Initialize an empty mask [H, W] with zeros (background class)
     mask_array = np.zeros((height, width), dtype=np.int64)
@@ -42,9 +42,9 @@ def create_masks(image_info, annotations, output_dir_masks):
     # Process annotations for the image
     if image_id in annotations:
         for annotation in annotations[image_id]:
-            segmentation = annotation["segmentation"]
-            category_id = annotation["category_id"]  # Use category_id as class index
-
+            segmentation = annotation['segmentation']
+            original_category_id = annotation['category_id']  # Use category_id as class index
+            category_id = int(category_id_to_idx[original_category_id])
             # If the segmentation is a list of polygons
             if isinstance(segmentation, list):
                 for polygon_points in segmentation:
@@ -60,60 +60,59 @@ def create_masks(image_info, annotations, output_dir_masks):
 
                     # Fill the mask with the category_id
                     mask_array[rr, cc] = category_id
-
     # Save the mask as a .npy file
-    mask_path = os.path.join(output_dir_masks, f"{image_id:012d}.npy")
+    mask_path = os.path.join(output_dir_masks, f'{image_id:012d}.npy')
     np.save(mask_path, mask_array)
-
+    
 
 # process a single COCO split
-def process_coco_split(split):
-    output_dir_images = f"coco/{split}/images"
-    output_dir_masks = f"coco/{split}/masks"
-
-    if split != "test":
+def process_coco_split(split, category_id_to_idx):
+    output_dir_images = f'coco/{split}/images'
+    output_dir_masks = f'coco/{split}/masks'
+    
+    if split != 'test':
         os.makedirs(output_dir_masks, exist_ok=True)
 
     os.makedirs(output_dir_images, exist_ok=True)
 
-    if split != "test":
+    if split != 'test':
         annotations_url = "http://images.cocodataset.org/annotations/annotations_trainval2017.zip"
-        annotations_zip_path = "annotations.zip"
-        annotations_dir = "annotations"
+        annotations_zip_path = 'annotations.zip'
+        annotations_dir = 'annotations'
 
         # Download and extract annotations if not already present
         if not os.path.exists(annotations_zip_path):
             print("Downloading annotations...")
             annotations_data = requests.get(annotations_url)
-            with open(annotations_zip_path, "wb") as f:
+            with open(annotations_zip_path, 'wb') as f:
                 f.write(annotations_data.content)
             print("Annotations downloaded.")
-            with zipfile.ZipFile(annotations_zip_path, "r") as zip_ref:
+            with zipfile.ZipFile(annotations_zip_path, 'r') as zip_ref:
                 zip_ref.extractall(annotations_dir)
 
         # Load the appropriate annotation file for train or val
-        annotations_file = os.path.join(annotations_dir, "annotations", f"instances_{split}2017.json")
-        with open(annotations_file, "r") as f:
+        annotations_file = os.path.join(annotations_dir, 'annotations', f'instances_{split}2017.json')
+        with open(annotations_file, 'r') as f:
             coco_data = json.load(f)
 
         # Get all image data entries
-        images_data = coco_data["images"]
+        images_data = coco_data['images']
 
         # Create a mapping from image_id to annotation data
         image_id_to_annotations = {}
-        for annotation in coco_data["annotations"]:
-            image_id = annotation["image_id"]
+        for annotation in coco_data['annotations']:
+            image_id = annotation['image_id']
             if image_id not in image_id_to_annotations:
                 image_id_to_annotations[image_id] = []
             image_id_to_annotations[image_id].append(annotation)
 
         # Download images and create masks
         for image_info in images_data:
-            img_filename = image_info["file_name"]
+            img_filename = image_info['file_name']
             download_image(img_filename, output_dir_images, split)
-            create_masks(image_info, image_id_to_annotations, output_dir_masks)
+            create_masks(image_info, image_id_to_annotations, output_dir_masks, category_id_to_idx)
 
-    # For test split, only download images
+    # For test split, only download images 
     else:
         print(f"Processing {split} split.")
         test_images_url = f"http://images.cocodataset.org/zips/{split}2017.zip"
@@ -123,28 +122,27 @@ def process_coco_split(split):
         download_and_extract(test_images_url, test_zip_path, output_dir_images)
         print(f"Downloaded test images for {split} split.")
 
-
 # Utility to download and extract large zip files in chunks
 def download_and_extract(url, zip_path, extract_dir):
     if not os.path.exists(zip_path):
         print(f"Downloading from {url}...")
         with requests.get(url, stream=True) as r:
             r.raise_for_status()
-            with open(zip_path, "wb") as f:
+            with open(zip_path, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=8192):
                     f.write(chunk)
         print(f"Extracting {zip_path} to {extract_dir}...")
 
-        with zipfile.ZipFile(zip_path, "r") as zip_ref:
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             # Manually extract files and place them directly in the images folder
             for member in zip_ref.namelist():
                 # We are specifically looking for files under the 'test2017/' subfolder
-                if member.startswith("test2017/") and not member.endswith("/"):
+                if member.startswith("test2017/") and not member.endswith('/'):
                     # Strip the 'test2017/' part of the path
                     filename = os.path.basename(member)
                     # Define where to place the extracted files
                     extracted_path = os.path.join(extract_dir, filename)
-
+                    
                     # Open the source file from the zip and write it to the destination
                     with zip_ref.open(member) as source_file:
                         with open(extracted_path, "wb") as output_file:
@@ -153,38 +151,42 @@ def download_and_extract(url, zip_path, extract_dir):
     else:
         print(f"{zip_path} already exists.")
 
-
 def COCO():
     # Load annotations once for both train and val splits to ensure consistent colors and save category labels
     annotations_url = "http://images.cocodataset.org/annotations/annotations_trainval2017.zip"
-    annotations_zip_path = "annotations.zip"
-    annotations_dir = "annotations"
+    annotations_zip_path = 'annotations.zip'
+    annotations_dir = 'annotations'
 
     if not os.path.exists(annotations_zip_path):
         print("Downloading annotations...")
         annotations_data = requests.get(annotations_url)
-        with open(annotations_zip_path, "wb") as f:
+        with open(annotations_zip_path, 'wb') as f:
             f.write(annotations_data.content)
         print("Annotations downloaded.")
-        with zipfile.ZipFile(annotations_zip_path, "r") as zip_ref:
+        with zipfile.ZipFile(annotations_zip_path, 'r') as zip_ref:
             zip_ref.extractall(annotations_dir)
 
     # Load the annotations to create a global category-to-color mapping
-    annotations_file = os.path.join(annotations_dir, "annotations", "instances_train2017.json")
-    with open(annotations_file, "r") as f:
+    annotations_file = os.path.join(annotations_dir, 'annotations', 'instances_train2017.json')
+    with open(annotations_file, 'r') as f:
         coco_data = json.load(f)
 
-    label_mapping = {category["name"]: category["id"] for category in coco_data["categories"]}
-
+    original_label_mapping = {category['name']: category['id'] for category in coco_data['categories']}
+    category_id_to_idx = {}
+    label_mapping = {}
+    for idx, (name, id) in enumerate(original_label_mapping.items(), start = 1):
+        category_id_to_idx[id] = idx
+        label_mapping[name] = idx
+    label_mapping['background'] = 0
+    category_id_to_idx[0] = 0
     # Ensure the same mapping is used for both train and val
-    process_coco_split("train")
-    process_coco_split("val")
-    process_coco_split("test")
+    process_coco_split('train', category_id_to_idx)
+    process_coco_split('val', category_id_to_idx)
+    process_coco_split('test', category_id_to_idx)
 
     # Save the label mappings with category names and colors
-    save_label_mappings("coco/train/masks", label_mapping, "Train")
-    save_label_mappings("coco/val/masks", label_mapping, "Val")
-
+    save_label_mappings('coco/train/masks', label_mapping, 'Train')
+    save_label_mappings('coco/val/masks', label_mapping, 'Val')
 
 # Process a single VOC split and save images/masks
 def process_voc_split(voc_dataset, output_dir_images, output_dir_masks, split_name):
@@ -197,17 +199,17 @@ def process_voc_split(voc_dataset, output_dir_images, output_dir_masks, split_na
 
         # Save the image
         img = T.ToPILImage()(img)
-        img_path = os.path.join(output_dir_images, f"{split_name}_{idx}.jpg")
+        img_path = os.path.join(output_dir_images, f'{split_name}_{idx}.jpg')
         img.save(img_path)
 
         # Convert the mask to a NumPy array with shape [H, W]
         mask_array = np.array(mask)
+        mask_array[mask_array == 255] = 0
 
         # Save the mask as a .npy file
-        mask_path = os.path.join(output_dir_masks, f"{split_name}_{idx}.npy")
+        mask_path = os.path.join(output_dir_masks, f'{split_name}_{idx}.npy')
         np.save(mask_path, mask_array)
     print(f"{split_name.capitalize()} PASCAL VOC images and masks have been saved!")
-
 
 def VOC():
     # Output directories for images and masks for all sets
