@@ -1,0 +1,34 @@
+model:
+  name: SEGONE
+  type: segmentation
+  channel_in: 3
+  channel_out: 4
+  num_layers: 4
+  kernel_size: 4
+  pool_kernel_size: 4
+  bottleneck_scale: 1
+  bottleneck_repeat: 5
+  bottleneck_channel: 32
+
+data:
+  name: VOC
+  datapath: data/voc
+  train: train
+  val: val
+  resolution:
+    - 512
+    - 512
+
+train:
+  cuda: true
+  epoch: 1000
+  learning_rate: 0.003
+  lr_step: 500
+  batch_size: 16
+  num_workers: 2
+  save_dir: exps
+  load_weights: null
+  load_optimizer: null
+  load_encoder: null
+  save_frequency: 30
+  
