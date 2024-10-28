@@ -1,14 +1,12 @@
 import torch.nn as nn
 from torchvision.models.resnet import resnet18, resnet34, resnet50
 
-from segone.utils.common_layers import (
-    Bottleneck,
-    ConvBlock
-)
+from segone.utils.common_layers import Bottleneck, ConvBlock
 
 
 class ResNetEncoder(nn.Module):
     """Resnet 18/34/50 backbone encoder"""
+
     def __init__(self, opts):
         """BottleNeck + MaxPool > Conv > Conv"""
         super(ResNetEncoder, self).__init__()
@@ -26,8 +24,8 @@ class ResNetEncoder(nn.Module):
         )
         self.convs = nn.ModuleDict()
         for i in range(self.opts["num_layers"]):
-            self.convs[f"conv_1_{i}"] = ConvBlock(self.channels[i], self.channels[i+1])
-            self.convs[f"conv_2_{i}"] = ConvBlock(self.channels[i+1], self.channels[i+1])
+            self.convs[f"conv_1_{i}"] = ConvBlock(self.channels[i], self.channels[i + 1])
+            self.convs[f"conv_2_{i}"] = ConvBlock(self.channels[i + 1], self.channels[i + 1])
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
         self.relu = nn.ReLU()
 
