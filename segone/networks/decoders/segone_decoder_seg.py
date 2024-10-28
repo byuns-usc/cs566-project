@@ -67,7 +67,8 @@ class SegDecoder(nn.Module):
             x, (_, _, h, w) = spatial_flatten(x)
             x = self.convs[f"channel_2_{i}"](x)
             x = channel_flatten(x)
-            self.outputs.insert(0, channel_recover(self.convs[f"head_{i}"](x), h, w))
+            # self.outputs.insert(0, channel_recover(self.convs[f"head_{i}"](x), h, w))
+            self.outputs.append(channel_recover(self.convs[f"head_{i}"](x), h, w))
             x = self.convs[f"spatial_{i}"](x)
 
         return self.outputs
