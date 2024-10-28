@@ -1,3 +1,6 @@
+import time
+
+import torch
 import torch.nn as nn
 
 from segone.networks.decoders.segone_decoder_cla import ClaDecoder
@@ -19,6 +22,18 @@ class SegOne(nn.Module):
         self.decoder = self.decoder_types[self.opts["type"]](self.opts, channel_enc=self.encoder.get_channels())
 
     def forward(self, x):
+        # torch.cuda.synchronize()
+        # start_time = time.time()
+        # enc_features = self.encoder(x)
+        # torch.cuda.synchronize()
+        # end_time = time.time()
+        # print(f"Encoder runtime: {end_time-start_time:.4f}s")
+        # torch.cuda.synchronize()
+        # start_time = time.time()
+        # outputs = self.decoder(enc_features)
+        # torch.cuda.synchronize()
+        # end_time = time.time()
+        # print(f"Decoder runtime: {end_time-start_time:.4f}s")
         enc_features = self.encoder(x)
         outputs = self.decoder(enc_features)
         return outputs

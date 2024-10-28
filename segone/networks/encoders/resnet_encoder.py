@@ -1,5 +1,6 @@
+import numpy as np
 import torch.nn as nn
-from torchvision.models.resnet import resnet18, resnet34, resnet50
+from torchvision.models.resnet import resnet18, resnet34, resnet50, ResNet18_Weights, ResNet34_Weights, ResNet50_Weights
 
 from segone.utils.common_layers import Bottleneck, ConvBlock
 
@@ -14,35 +15,39 @@ class ResNetEncoder(nn.Module):
         self.opts = opts
 
         # Calculate channel outs
-        self.channels = [(2**i) * self.opts["bottleneck_channel"] for i in range(self.opts["num_layers"] + 1)]
+        self.num_ch_enc = np.array([64, 64, 128, 256, 512])
 
         # Initialize Layers
-        self.bottleneck = Bottleneck(
-            self.opts["channel_in"],
-            self.opts["bottleneck_channel"],
-            repeat=self.opts["bottleneck_repeat"],
-        )
-        self.convs = nn.ModuleDict()
-        for i in range(self.opts["num_layers"]):
-            self.convs[f"conv_1_{i}"] = ConvBlock(self.channels[i], self.channels[i + 1])
-            self.convs[f"conv_2_{i}"] = ConvBlock(self.channels[i + 1], self.channels[i + 1])
-        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.relu = nn.ReLU()
+        resnets = {18: resnet18,
+                   34: resnet34,
+                   50: resnet50}
+        weights = {
+            18: ResNet18_Weights.IMAGENET1K_V1,
+            34: ResNet34_Weights.IMAGENET1K_V1,
+            50: ResNet50_Weights.IMAGENET1K_V1
+        }
+
+        assert self.opts["num_layers"] in resnets
+
+        self.encoder = resnets[self.opts["num_layers"]](weights=weights[self.opts["num_layers"]])
+
+        if self.opts["num_layers"] > 34:
+            self.num_ch_enc[1:] *= 4
 
     def get_channels(self):
         """Returns encoded channels for skip connections"""
-        return self.channels
+        return self.num_ch_enc
 
     def forward(self, x):
         self.features = []
-
-        x = self.bottleneck(x)
-        self.features.append(x)
-        for i in range(self.opts["num_layers"]):
-            x = self.pool(x)
-            x = self.convs[f"conv_1_{i}"](x)
-            x = self.convs[f"conv_2_{i}"](x)
-
-            self.features.append(x)
+        x = (x - 0.45) / 0.225
+        x = self.encoder.conv1(x)
+        x = self.encoder.bn1(x)
+        self.features.append(self.encoder.relu(x))
+        self.features.append(self.encoder.layer1(self.encoder.maxpool(self.features[-1])))
+        self.features.append(self.encoder.layer2(self.features[-1]))
+        self.features.append(self.encoder.layer3(self.features[-1]))
+        self.features.append(self.encoder.layer4(self.features[-1]))
 
         return self.features
+    
