@@ -31,8 +31,8 @@ class ConvBlock(nn.Module):
 
     def forward(self, x):
         x = self.conv(x)
-        x = self.bn(x)
         x = self.relu(x)
+        x = self.bn(x)
         return x
 
 

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from segone.utils.common_layers import ConvBlock, upsample
+from segone.utils.common_layers import ConvBlock, Conv3x3, upsample
 
 
 class CommonSegDecoder(nn.Module):
@@ -22,7 +22,7 @@ class CommonSegDecoder(nn.Module):
                 self.channel_enc[i - 1 if i > 0 else 0] * (2 if i > 0 else 1), self.channel_enc[i - 1 if i > 0 else 0]
             )
 
-            self.convs[f"head_{i}"] = ConvBlock(self.channel_enc[i - 1 if i > 0 else 0], self.opts["channel_out"])
+            self.convs[f"head_{i}"] = Conv3x3(self.channel_enc[i - 1 if i > 0 else 0], self.opts["channel_out"])
 
     def forward(self, features_enc):
         self.outputs = []

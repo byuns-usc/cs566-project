@@ -51,14 +51,12 @@ class Trainer:
             num_workers=self.train_opts["num_workers"],
         )
 
-        # self.val_iter = iter(self.val_loader)
-        # val_data = next(self.val_iter)
-        # print(val_data[0].size())
-
         # Define model
         assert self.model_opts["name"] in self.available_models
         self.model = self.available_models[self.model_opts["name"]](self.model_opts)
         self.model.to(self.device)
+
+        self.initialize_weights()
 
         # If pretrain model exists, load
         if self.train_opts["load_weights"] is not None:
@@ -68,11 +66,18 @@ class Trainer:
 
         # Set training params
         self.optim = optim.Adam(self.model.parameters(), self.train_opts["learning_rate"])
-        self.criteria = nn.CrossEntropyLoss()
         self.lr_scheduler = optim.lr_scheduler.StepLR(self.optim, self.train_opts["lr_step"], 0.1)
 
+        self.num_classes = self.model_opts["channel_out"]
+        background_scaling = 8
+        weights = [1/self.num_classes + (background_scaling-1)/(background_scaling*self.num_classes*(self.num_classes-1))]*(self.num_classes-1)
+        weights.insert(0, 1/(background_scaling*self.num_classes))
+        print(f"Loss weights: {weights}")
+        self.weights_tensor = torch.tensor(weights, dtype=torch.float32).to(self.device)
+        self.criteria = nn.CrossEntropyLoss(weight=self.weights_tensor)
+
         # Make dir and save options used
-        self.save_dir = os.path.join(self.train_opts["save_dir"], f"{self.model_opts["name"]}_{int(time.time())}")
+        self.save_dir = os.path.join(self.train_opts["save_dir"], f"{self.model_opts["name"]}_{self.data_opts["name"]}_{int(time.time())}")
         os.makedirs(self.save_dir)
         with open(os.path.join(self.save_dir, "config.yaml"), "wb") as f:
             yaml = YAML()
@@ -96,12 +101,13 @@ class Trainer:
 
     def train(self):
         self.model.train()
-        self.val_iter = iter(self.val_loader)
 
         best_val_loss = float("inf")
         best_model_weights = None
         counter = 0
         patience = 5
+        early_stop_counter = 0
+        early_stop_thres = 5
 
         for self.epoch in range(self.train_opts["epoch"]):
             print(f"Epoch: {self.epoch}")
@@ -121,18 +127,24 @@ class Trainer:
             print(f"Train loss: {losses}, Val loss: {val_losses}")
 
             if val_losses < best_val_loss:
-                print(f"Best val loss at {val_losses}")
                 best_model_weights = self.model.state_dict()
                 best_val_loss = val_losses
                 counter = 0
+                early_stop_counter = 0
+                print(f"Best val loss at {val_losses}")
             else:
                 counter += 1
                 print(f"Val loss not improved. Patience: {patience-counter}")
 
             if counter >= patience:
-                print("Reverting Weight")
                 self.model.load_state_dict(best_model_weights)
                 counter = 0
+                early_stop_counter += 1
+                print(f"Reverting Weight. Early Stop Counter: {early_stop_counter}/{early_stop_thres}")
+
+            if early_stop_counter >= early_stop_thres:
+                print(f"Early Stop with best val loss: {best_val_loss}")
+                break
 
             if (self.epoch + 1) % self.train_opts["save_frequency"] == 0:
                 self.save_model()
@@ -140,28 +152,41 @@ class Trainer:
     def val(self):
         self.model.eval()
 
-        # try:
-        #     inputs = next(self.val_iter)
-        # except StopIteration:
-        #     self.val_iter = iter(self.val_loader)
-        #     inputs = next(self.val_iter)
+        if self.data_opts["name"] in ("BRAIN", "HEART"):
+            if self.epoch == 0:
+                self.val_iter = iter(self.val_loader)
+            try:
+                inputs = next(self.val_iter)
+            except StopIteration:
+                self.val_iter = iter(self.val_loader)
+                inputs = next(self.val_iter)
 
-        # with torch.no_grad():
-        #     outputs, losses = self.process_batch(inputs)
-        #     self.plot_mask(inputs[0], inputs[1], outputs[-1])
-        #     del inputs, outputs
-
-        total_loss = 0
-        counter = 0
-        with torch.no_grad():
-            for inputs in tqdm(self.val_loader):
+            with torch.no_grad():
                 outputs, losses = self.process_batch(inputs)
-                total_loss += losses
-                counter += 1
-            self.plot_mask(inputs[0], inputs[1], outputs[-1])
-        losses = total_loss/counter
-        self.model.train()
+                self.plot_mask(inputs[0], inputs[1], outputs[-1])
+                del outputs
+        
+        else:
+            total_loss = 0
+            counter = 0
+            with torch.no_grad():
+                for inputs in tqdm(self.val_loader):
+                    outputs, losses = self.process_batch(inputs)
+                    total_loss += losses
+                    counter += 1
+                self.plot_mask(inputs[0], inputs[1], outputs[-1])
+            losses = total_loss/counter
+            self.model.train()
+
         return losses
+    
+    def initialize_weights(self):
+        for m in self.model.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.ones_(m.weight)
+                nn.init.zeros_(m.bias)
 
     def save_model(self):
         weight_save_dir = os.path.join(self.save_dir, "model")

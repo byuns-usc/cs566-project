@@ -5,10 +5,12 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import random
 from PIL import Image
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
+import torchvision.transforms.functional as TF
 
 
 # Image-Mask Dataset Class
@@ -51,6 +53,22 @@ class ImageMaskDataset(Dataset):
 
     def get_label_mapping(self):
         return [(key, value) for key, value in self.mask_labels.items()]
+    
+    def random_transform(self, image, mask):
+        if random.random() > 0.5:
+            image = TF.hflip(image)
+            mask = TF.hflip(mask)
+
+        # Random vertical flipping
+        if random.random() > 0.5:
+            image = TF.vflip(image)
+            mask = TF.vflip(mask)
+
+        # Transform to tensor
+        # image = TF.to_tensor(image)
+        # mask = TF.to_tensor(mask)
+
+        return image, mask
 
     def __getitem__(self, idx):
         img_name = self.image_files[idx]
@@ -81,6 +99,8 @@ class ImageMaskDataset(Dataset):
         # Apply transformations to the image
         if self.transform:
             image = self.transform(image)
+
+        image, mask_tensor = self.random_transform(image, mask_tensor)
 
         return image, mask_tensor  # No need for unnecessary squeezing or unsqueezing
 

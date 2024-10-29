@@ -49,6 +49,7 @@ class SegDecoder(nn.Module):
                 stride=2 * self.channel_enc[i - 1],
                 use_relu=False,
                 use_pad=False,
+                use_bn=False
             )
 
         self.upsample = PixelShuffle(scale=2)

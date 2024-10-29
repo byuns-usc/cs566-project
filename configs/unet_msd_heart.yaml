@@ -1,5 +1,5 @@
 model:
-  name: SEGONE
+  name: UNET
   type: segmentation
   channel_in: 3
   channel_out: 4
@@ -30,5 +30,5 @@ train:
   load_weights: null
   load_optimizer: null
   load_encoder: null
-  save_frequency: 30
-  
+  save_frequency: 5
+  patience: 5

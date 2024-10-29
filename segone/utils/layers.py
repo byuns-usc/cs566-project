@@ -34,20 +34,20 @@ def channel_recover(x, h, w):
 class Conv1DBlock(nn.Module):
     """Layer to pad and convolve input Bx1xHWC -> Bx1xHWC or BxCxHW"""
 
-    def __init__(self, kernel_size, out_channels=1, stride=1, use_refl=True, use_relu=True, use_pad=True):
+    def __init__(self, kernel_size, out_channels=1, stride=1, use_refl=True, use_relu=True, use_pad=True, use_bn=False):
         super(Conv1DBlock, self).__init__()
 
         self.out_channels = out_channels
         self.use_relu = use_relu
         self.use_pad = use_pad
+        self.use_bn = use_bn
 
         if use_refl:
             self.pad = nn.ReflectionPad1d(kernel_size // 2)
         else:
             self.pad = nn.ZeroPad1d(kernel_size // 2)
         self.conv = nn.Conv1d(1, self.out_channels, kernel_size, stride=stride)
-        # FIXME batchnorm
-        if self.out_channels > 1:
+        if self.out_channels > 1 and self.use_bn:
             self.bn = nn.BatchNorm1d(self.out_channels)
         self.relu = nn.ReLU()
 
@@ -55,10 +55,10 @@ class Conv1DBlock(nn.Module):
         if self.use_pad:
             x = self.pad(x)
         x = self.conv(x)
-        if self.out_channels > 1:
-            x = self.bn(x)
         if self.use_relu:
             x = self.relu(x)
+        if self.out_channels > 1 and self.use_bn:
+            x = self.bn(x)
         return x
 
 

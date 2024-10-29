@@ -1,9 +1,9 @@
 model:
-  name: SEGONE
+  name: RESNET
   type: segmentation
   channel_in: 3
   channel_out: 4
-  num_layers: 4
+  num_layers: 34
   kernel_size: 4
   pool_kernel_size: 4
   bottleneck_scale: 1
@@ -30,5 +30,5 @@ train:
   load_weights: null
   load_optimizer: null
   load_encoder: null
-  save_frequency: 30
-  
+  save_frequency: 5
+  patience: 5
