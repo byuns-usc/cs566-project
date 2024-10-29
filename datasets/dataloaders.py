@@ -161,7 +161,7 @@ if __name__ == "__main__":
 
     pets_loader_test = create_dataloader(pets_root_dir, "PET", split="test", img_size=fixed_size)
 
-# Oxford-IIIT Pet Dataset Loaders (trainval folder for both train and val)
+    # Oxford-IIIT Pet Dataset Loaders (trainval folder for both train and val)
     pets2_root_dir = "oxford_pet2"
     pets2_loader_train = create_dataloader(pets2_root_dir, "PET2", split="train", img_size=fixed_size)
 

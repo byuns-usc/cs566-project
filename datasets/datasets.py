@@ -389,6 +389,7 @@ def PET():
     save_label_mappings("oxford_pet/val/masks", class_mapping, "Val")
     save_label_mappings("oxford_pet/test/masks", class_mapping, "Test")
 
+
 def process_pet2_split(pet_dataset, output_dir_images, output_dir_masks, split_name, indices):
     os.makedirs(output_dir_images, exist_ok=True)
     os.makedirs(output_dir_masks, exist_ok=True)
@@ -403,7 +404,7 @@ def process_pet2_split(pet_dataset, output_dir_images, output_dir_masks, split_n
 
         # Convert mask to NumPy and map foreground to breed ID
         mask_array = np.array(mask)
-        mask_array = np.where(mask_array> 0, mask_array-1, 1) # 2 is background, 1 pet, 3 foreground
+        mask_array = np.where(mask_array > 0, mask_array - 1, 1)  # 2 is background, 1 pet, 3 foreground
         # Save mask as .npy
         mask_path = os.path.join(output_dir_masks, f"{split_name}_{idx}.npy")
         np.save(mask_path, mask_array)
@@ -415,7 +416,6 @@ def PET2():
     base_dir = "oxford_pet2"
     os.makedirs(base_dir, exist_ok=True)
 
-    
     # Load trainval dataset
     pet_trainval_dataset = datasets.OxfordIIITPet(
         root="./data", split="trainval", target_types=("category", "segmentation"), download=True
@@ -448,7 +448,7 @@ def PET2():
         "test",
         test_indices,
     )
-    class_mapping = {'pet':0, 'background': 1, 'foreground': 2}
+    class_mapping = {"pet": 0, "background": 1, "foreground": 2}
     save_label_mappings("oxford_pet2/train/masks", class_mapping, "Train")
     save_label_mappings("oxford_pet2/val/masks", class_mapping, "Val")
     save_label_mappings("oxford_pet2/test/masks", class_mapping, "Test")
