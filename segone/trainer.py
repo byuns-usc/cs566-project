@@ -70,14 +70,19 @@ class Trainer:
 
         self.num_classes = self.model_opts["channel_out"]
         background_scaling = 8
-        weights = [1/self.num_classes + (background_scaling-1)/(background_scaling*self.num_classes*(self.num_classes-1))]*(self.num_classes-1)
-        weights.insert(0, 1/(background_scaling*self.num_classes))
+        weights = [
+            1 / self.num_classes
+            + (background_scaling - 1) / (background_scaling * self.num_classes * (self.num_classes - 1))
+        ] * (self.num_classes - 1)
+        weights.insert(0, 1 / (background_scaling * self.num_classes))
         print(f"Loss weights: {weights}")
         self.weights_tensor = torch.tensor(weights, dtype=torch.float32).to(self.device)
         self.criteria = nn.CrossEntropyLoss(weight=self.weights_tensor)
 
         # Make dir and save options used
-        self.save_dir = os.path.join(self.train_opts["save_dir"], f"{self.model_opts["name"]}_{self.data_opts["name"]}_{int(time.time())}")
+        self.save_dir = os.path.join(
+            self.train_opts["save_dir"], f"{self.model_opts["name"]}_{self.data_opts["name"]}_{int(time.time())}"
+        )
         os.makedirs(self.save_dir)
         with open(os.path.join(self.save_dir, "config.yaml"), "wb") as f:
             yaml = YAML()
@@ -165,7 +170,7 @@ class Trainer:
                 outputs, losses = self.process_batch(inputs)
                 self.plot_mask(inputs[0], inputs[1], outputs[-1])
                 del outputs
-        
+
         else:
             total_loss = 0
             counter = 0
@@ -175,15 +180,15 @@ class Trainer:
                     total_loss += losses
                     counter += 1
                 self.plot_mask(inputs[0], inputs[1], outputs[-1])
-            losses = total_loss/counter
+            losses = total_loss / counter
             self.model.train()
 
         return losses
-    
+
     def initialize_weights(self):
         for m in self.model.modules():
             if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.ones_(m.weight)
                 nn.init.zeros_(m.bias)

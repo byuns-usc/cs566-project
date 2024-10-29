@@ -1,16 +1,16 @@
 import json
 import os
+import random
 
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import random
+import torchvision.transforms.functional as TF
 from PIL import Image
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
-import torchvision.transforms.functional as TF
 
 
 # Image-Mask Dataset Class
@@ -53,7 +53,7 @@ class ImageMaskDataset(Dataset):
 
     def get_label_mapping(self):
         return [(key, value) for key, value in self.mask_labels.items()]
-    
+
     def random_transform(self, image, mask):
         if random.random() > 0.5:
             image = TF.hflip(image)
