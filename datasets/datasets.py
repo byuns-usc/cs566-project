@@ -32,7 +32,7 @@ def save_label_mappings(mask_dir, category_mapping, dataset_name):
 
 
 # Create mask files as [H, W] arrays with class indices
-def create_masks(image_info, annotations, output_dir_masks):
+def create_masks(image_info, annotations, output_dir_masks, category_id_to_idx):
     image_id = image_info["id"]
     width, height = image_info["width"], image_info["height"]
 
@@ -43,8 +43,8 @@ def create_masks(image_info, annotations, output_dir_masks):
     if image_id in annotations:
         for annotation in annotations[image_id]:
             segmentation = annotation["segmentation"]
-            category_id = annotation["category_id"]  # Use category_id as class index
-
+            original_category_id = annotation["category_id"]  # Use category_id as class index
+            category_id = int(category_id_to_idx[original_category_id])
             # If the segmentation is a list of polygons
             if isinstance(segmentation, list):
                 for polygon_points in segmentation:
@@ -60,14 +60,13 @@ def create_masks(image_info, annotations, output_dir_masks):
 
                     # Fill the mask with the category_id
                     mask_array[rr, cc] = category_id
-
     # Save the mask as a .npy file
     mask_path = os.path.join(output_dir_masks, f"{image_id:012d}.npy")
     np.save(mask_path, mask_array)
 
 
 # process a single COCO split
-def process_coco_split(split):
+def process_coco_split(split, category_id_to_idx):
     output_dir_images = f"coco/{split}/images"
     output_dir_masks = f"coco/{split}/masks"
 
@@ -111,7 +110,7 @@ def process_coco_split(split):
         for image_info in images_data:
             img_filename = image_info["file_name"]
             download_image(img_filename, output_dir_images, split)
-            create_masks(image_info, image_id_to_annotations, output_dir_masks)
+            create_masks(image_info, image_id_to_annotations, output_dir_masks, category_id_to_idx)
 
     # For test split, only download images
     else:
@@ -174,12 +173,18 @@ def COCO():
     with open(annotations_file, "r") as f:
         coco_data = json.load(f)
 
-    label_mapping = {category["name"]: category["id"] for category in coco_data["categories"]}
-
+    original_label_mapping = {category["name"]: category["id"] for category in coco_data["categories"]}
+    category_id_to_idx = {}
+    label_mapping = {}
+    for idx, (name, id) in enumerate(original_label_mapping.items(), start=1):
+        category_id_to_idx[id] = idx
+        label_mapping[name] = idx
+    label_mapping["background"] = 0
+    category_id_to_idx[0] = 0
     # Ensure the same mapping is used for both train and val
-    process_coco_split("train")
-    process_coco_split("val")
-    process_coco_split("test")
+    process_coco_split("train", category_id_to_idx)
+    process_coco_split("val", category_id_to_idx)
+    process_coco_split("test", category_id_to_idx)
 
     # Save the label mappings with category names and colors
     save_label_mappings("coco/train/masks", label_mapping, "Train")
@@ -202,6 +207,7 @@ def process_voc_split(voc_dataset, output_dir_images, output_dir_masks, split_na
 
         # Convert the mask to a NumPy array with shape [H, W]
         mask_array = np.array(mask)
+        mask_array[mask_array == 255] = 0
 
         # Save the mask as a .npy file
         mask_path = os.path.join(output_dir_masks, f"{split_name}_{idx}.npy")
