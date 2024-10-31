@@ -107,9 +107,10 @@ class OneEncoder(nn.Module):
                 use_pad=False,
             )
             self.convs[f"channel_2_{i}"] = Conv1DBlock(
-                kernel_size=self.channels[i + 1],
+                kernel_size=1,
+                in_channels=self.channels[i + 1],
                 out_channels=self.channels[i + 1],
-                stride=self.channels[i + 1],
+                stride=1,
                 use_pad=False,
             )
         self.downsample = PixelUnshuffle(scale=2)
@@ -122,6 +123,7 @@ class OneEncoder(nn.Module):
     def forward(self, x):
         self.features = []
 
+        x = (x - 0.45) / 0.225
         x = self.bottleneck(x)
         self.features.append(x)
         for i in range(self.opts["num_layers"]):
@@ -129,7 +131,6 @@ class OneEncoder(nn.Module):
             x, (_, _, h, w) = spatial_flatten(x)
             x = self.convs[f"spatial_{i}"](x)
             x = self.convs[f"channel_1_{i}"](x)
-            x = channel_flatten(x)
             x = self.convs[f"channel_2_{i}"](x)
             x = channel_recover(x, h, w)
 

@@ -8,7 +8,7 @@ class Bottleneck(nn.Module):
 
         self.blocks = nn.ModuleList(
             [
-                nn.Conv2d(channel_in if i == 0 else channel_out, channel_out, kernel_size=3, padding=1)
+                ConvBlock(channel_in if i == 0 else channel_out, channel_out)
                 for i in range(repeat)
             ]
         )
@@ -22,24 +22,30 @@ class Bottleneck(nn.Module):
 class ConvBlock(nn.Module):
     """Layer to perform a convolution followed by ELU"""
 
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, bn_first=True, use_relu=True):
         super(ConvBlock, self).__init__()
 
+        self.bn_first = bn_first
+        self.use_relu = use_relu
+
         self.conv = Conv3x3(in_channels, out_channels)
-        self.bn = nn.BatchNorm2d(out_channels)
-        self.relu = nn.ReLU()
+        if self.use_relu:
+            self.bn = nn.BatchNorm2d(out_channels)
+            self.relu = nn.ReLU()
 
     def forward(self, x):
         x = self.conv(x)
-        x = self.relu(x)
-        x = self.bn(x)
+        if self.use_relu:
+            if self.bn_first: x = self.bn(x)
+            x = self.relu(x)
+            if not self.bn_first: x = self.bn(x)
         return x
 
 
 class Conv3x3(nn.Module):
     """Layer to pad and convolve input"""
 
-    def __init__(self, in_channels, out_channels, use_refl=True):
+    def __init__(self, in_channels, out_channels, use_refl=False):
         super(Conv3x3, self).__init__()
 
         if use_refl:
@@ -49,10 +55,22 @@ class Conv3x3(nn.Module):
         self.conv = nn.Conv2d(int(in_channels), int(out_channels), 3)
 
     def forward(self, x):
-        out = self.pad(x)
-        out = self.conv(out)
-        return out
+        x = self.pad(x)
+        x = self.conv(x)
+        return x
 
+
+class UpSample(nn.Module):
+    """Upsample with ConvTranspose2D"""
+
+    def __init__(self, in_channels, out_channels):
+        super(UpSample, self).__init__()
+        self.conv = nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2)
+
+    def forward(self, x):
+        x = self.conv(x)
+        return x
+    
 
 def upsample(x):
     """Upsample input tensor by a factor of 2"""

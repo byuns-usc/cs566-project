@@ -23,10 +23,10 @@ if __name__ == "__main__":
             "type": "classification",
             "channel_in": 3,
             "channel_out": 13,
-            "num_layers": 4,
+            "num_layers": 5,
             "bottleneck_scale": 2,
             "bottleneck_repeat": 3,
-            "bottleneck_channel": 32,
+            "bottleneck_channel": 64,
             "kernel_size": 3,
         }
     ).to(device=device)
@@ -46,10 +46,10 @@ if __name__ == "__main__":
             "type": "segmentation",
             "channel_in": 3,
             "channel_out": 13,
-            "num_layers": 4,
+            "num_layers": 5,
             "bottleneck_scale": 2,
             "bottleneck_repeat": 3,
-            "bottleneck_channel": 32,
+            "bottleneck_channel": 64,
             "kernel_size": 3,
         }
     ).to(device=device)
@@ -93,11 +93,11 @@ if __name__ == "__main__":
             "name": "UNET",
             "type": "segmentation",
             "channel_in": 3,
-            "channel_out": 13,
+            "channel_out": 21,
             "num_layers": 4,
-            "bottleneck_scale": 2,
-            "bottleneck_repeat": 3,
-            "bottleneck_channel": 32,
+            "bottleneck_scale": 1,
+            "bottleneck_repeat": 2,
+            "bottleneck_channel": 64,
             "kernel_size": 3,
         }
     ).to(device=device)

@@ -100,7 +100,8 @@ class ImageMaskDataset(Dataset):
         if self.transform:
             image = self.transform(image)
 
-        image, mask_tensor = self.random_transform(image, mask_tensor)
+        if self.split == "train":
+            image, mask_tensor = self.random_transform(image, mask_tensor)
 
         return image, mask_tensor  # No need for unnecessary squeezing or unsqueezing
 

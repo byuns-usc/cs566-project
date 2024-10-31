@@ -658,11 +658,11 @@ def BRAIN():
 def main():
     os.makedirs("data", exist_ok=True)
     os.chdir("data")
-    COCO()
+    # COCO()
     VOC()
-    PET()
-    HEART()
-    BRAIN()
+    # PET()
+    # HEART()
+    # BRAIN()
 
 
 if __name__ == "__main__":

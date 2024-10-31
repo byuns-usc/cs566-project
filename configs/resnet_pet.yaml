@@ -7,7 +7,7 @@ model:
   kernel_size: 4
   pool_kernel_size: 4
   bottleneck_scale: 1
-  bottleneck_repeat: 5
+  bottleneck_repeat: 2
   bottleneck_channel: 32
 
 data:
@@ -16,15 +16,15 @@ data:
   train: train
   val: val
   resolution:
-    - 512
-    - 512
+    - 256
+    - 256
 
 train:
   cuda: true
-  epoch: 1000
-  learning_rate: 0.001
-  lr_step: 500
-  batch_size: 8
+  epoch: 200
+  learning_rate: 0.0001
+  lr_step: 20
+  batch_size: 32
   num_workers: 4
   save_dir: exps
   load_weights: null

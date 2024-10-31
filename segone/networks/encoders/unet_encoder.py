@@ -33,6 +33,7 @@ class UNetEncoder(nn.Module):
     def forward(self, x):
         self.features = []
 
+        # x = (x - 0.45) / 0.225
         x = self.bottleneck(x)
         self.features.append(x)
         for i in range(self.opts["num_layers"]):

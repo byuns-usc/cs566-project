@@ -2,6 +2,8 @@ import os
 import time
 
 import matplotlib.pyplot as plt
+plt.switch_backend('agg')
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -56,7 +58,9 @@ class Trainer:
         self.model = self.available_models[self.model_opts["name"]](self.model_opts)
         self.model.to(self.device)
 
-        self.initialize_weights()
+        if not self.model_opts["name"] == "RESNET":
+            print("Initializing Weight")
+            self.initialize_weights()
 
         # If pretrain model exists, load
         if self.train_opts["load_weights"] is not None:
@@ -110,14 +114,14 @@ class Trainer:
         best_val_loss = float("inf")
         best_model_weights = None
         counter = 0
-        patience = 5
+        patience = 15
         early_stop_counter = 0
         early_stop_thres = 5
+        total_loss = 0
+        train_count = 0
 
         for self.epoch in range(self.train_opts["epoch"]):
             print(f"Epoch: {self.epoch}")
-            if self.epoch != 0:
-                self.lr_scheduler.step()
 
             for inputs in tqdm(self.train_loader):
                 outputs, losses = self.process_batch(inputs)
@@ -125,10 +129,16 @@ class Trainer:
                 losses.backward()
                 self.optim.step()
 
+                total_loss += losses
+                train_count += 1
+
+            losses = total_loss / train_count
+
+            self.lr_scheduler.step()
             val_losses = self.val()
 
             self.train_logger.add_scalar("loss", losses, self.epoch)
-            self.val_logger.add_scalar("loss", losses, self.epoch)
+            self.val_logger.add_scalar("loss", val_losses, self.epoch)
             print(f"Train loss: {losses}, Val loss: {val_losses}")
 
             if val_losses < best_val_loss:
@@ -245,6 +255,7 @@ class Trainer:
         cmap = plt.get_cmap("viridis", self.model_opts["channel_out"])
         for i in range(2):
             for j in range(2):
+                if len(images) <= i * 2 + j: break
                 axs[i, j * 3].imshow(images[i * 2 + j])
                 axs[i, j * 3 + 1].imshow(targets[i * 2 + j], cmap=cmap, vmin=0, vmax=self.model_opts["channel_out"])
                 axs[i, j * 3 + 2].imshow(masks[i * 2 + j], cmap=cmap, vmin=0, vmax=self.model_opts["channel_out"])
@@ -264,4 +275,5 @@ class Trainer:
         fig.savefig(
             os.path.join(self.save_dir, "images", f"{self.epoch}.png"), dpi=1600, bbox_inches="tight", pad_inches=0
         )
-        plt.close()
+        plt.close(fig)
+

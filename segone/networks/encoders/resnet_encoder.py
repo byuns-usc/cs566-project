@@ -22,7 +22,7 @@ class ResNetEncoder(nn.Module):
         weights = {
             18: ResNet18_Weights.IMAGENET1K_V1,
             34: ResNet34_Weights.IMAGENET1K_V1,
-            50: ResNet50_Weights.IMAGENET1K_V1,
+            50: ResNet50_Weights.IMAGENET1K_V2,
         }
 
         assert self.opts["num_layers"] in resnets
