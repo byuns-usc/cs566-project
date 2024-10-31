@@ -162,6 +162,14 @@ if __name__ == "__main__":
 
     pets_loader_test = create_dataloader(pets_root_dir, "PET", split="test", img_size=fixed_size)
 
+    # Oxford-IIIT Pet Dataset Loaders (trainval folder for both train and val)
+    pets2_root_dir = "oxford_pet2"
+    pets2_loader_train = create_dataloader(pets2_root_dir, "PET2", split="train", img_size=fixed_size)
+
+    pets2_loader_val = create_dataloader(pets2_root_dir, "PET2", split="val", img_size=fixed_size)
+
+    pets2_loader_test = create_dataloader(pets2_root_dir, "PET", split="test", img_size=fixed_size)
+
     # MSD Brain Tumor Dataset Loaders
     brain_root_dir = "msd_brain"
     brain_loader_train = create_dataloader(brain_root_dir, "BRAIN", split="train", img_size=fixed_size)
@@ -191,9 +199,11 @@ if __name__ == "__main__":
     verify_dataloader(coco_loader_val, "COCO Val")
     verify_dataloader(coco_loader_test, "COCO Test")
     verify_dataloader(voc_loader_train, "VOC Train")
-    # verify_dataloader(voc_loader_val, "VOC Val")
+    verify_dataloader(voc_loader_val, "VOC Val")
     verify_dataloader(pets_loader_train, "Oxford-IIIT Pets Train")
-    verify_dataloader(pets_loader_val, "Oxford-IIIT Pets Test")
+    verify_dataloader(pets_loader_val, "Oxford-IIIT Pets Val")
+    verify_dataloader(pets2_loader_train, "Oxford-IIIT Pets 2 Train")
+    verify_dataloader(pets2_loader_val, "Oxford-IIIT Pets 2 Val")
     verify_dataloader(brain_loader_train, "MSD Brain Tumor Train")
     verify_dataloader(brain_loader_test, "MSD Brain Tumor Test")
     verify_dataloader(heart_loader_train, "MSD Heart Train")

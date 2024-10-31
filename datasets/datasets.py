@@ -390,6 +390,70 @@ def PET():
     save_label_mappings("oxford_pet/test/masks", class_mapping, "Test")
 
 
+def process_pet2_split(pet_dataset, output_dir_images, output_dir_masks, split_name, indices):
+    os.makedirs(output_dir_images, exist_ok=True)
+    os.makedirs(output_dir_masks, exist_ok=True)
+
+    for idx, dataset_idx in enumerate(indices):
+        # Get the image and mask
+        img, (category, mask) = pet_dataset[dataset_idx]
+
+        # Save the image
+        img_path = os.path.join(output_dir_images, f"{split_name}_{idx}.jpg")
+        img.save(img_path)
+
+        # Convert mask to NumPy and map foreground to breed ID
+        mask_array = np.array(mask)
+        mask_array = np.where(mask_array > 0, mask_array - 1, 1)  # 2 is background, 1 pet, 3 foreground
+        # Save mask as .npy
+        mask_path = os.path.join(output_dir_masks, f"{split_name}_{idx}.npy")
+        np.save(mask_path, mask_array)
+    print(f"{split_name.capitalize()} set!")
+
+
+# Main function to handle the Oxford-IIIT Pet dataset
+def PET2():
+    base_dir = "oxford_pet2"
+    os.makedirs(base_dir, exist_ok=True)
+
+    # Load trainval dataset
+    pet_trainval_dataset = datasets.OxfordIIITPet(
+        root="./data", split="trainval", target_types=("category", "segmentation"), download=True
+    )
+
+    # Split trainval into train, val, and test sets
+    train_indices, val_indices, test_indices = split_trainval_indices(len(pet_trainval_dataset))
+
+    # Process each split
+    process_pet2_split(
+        pet_trainval_dataset,
+        os.path.join(base_dir, "train/images"),
+        os.path.join(base_dir, "train/masks"),
+        "train",
+        train_indices,
+    )
+
+    process_pet2_split(
+        pet_trainval_dataset,
+        os.path.join(base_dir, "val/images"),
+        os.path.join(base_dir, "val/masks"),
+        "val",
+        val_indices,
+    )
+
+    process_pet2_split(
+        pet_trainval_dataset,
+        os.path.join(base_dir, "test/images"),
+        os.path.join(base_dir, "test/masks"),
+        "test",
+        test_indices,
+    )
+    class_mapping = {"pet": 0, "background": 1, "foreground": 2}
+    save_label_mappings("oxford_pet2/train/masks", class_mapping, "Train")
+    save_label_mappings("oxford_pet2/val/masks", class_mapping, "Val")
+    save_label_mappings("oxford_pet2/test/masks", class_mapping, "Test")
+
+
 def process_heart_train(image_paths, mask_paths, output_dir_train_images, output_dir_train_masks):
     os.makedirs(output_dir_train_images, exist_ok=True)
     os.makedirs(output_dir_train_masks, exist_ok=True)
@@ -660,9 +724,10 @@ def main():
     os.chdir("data")
     # COCO()
     VOC()
-    # PET()
-    # HEART()
-    # BRAIN()
+    PET()
+    PET2()
+    HEART()
+    BRAIN()
 
 
 if __name__ == "__main__":
