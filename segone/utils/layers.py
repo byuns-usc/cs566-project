@@ -34,7 +34,17 @@ def channel_recover(x, h, w):
 class Conv1DBlock(nn.Module):
     """Layer to pad and convolve input Bx1xHWC -> Bx1xHWC or BxCxHW"""
 
-    def __init__(self, kernel_size, in_channels=1, out_channels=1, stride=1, use_refl=True, use_relu=True, use_pad=True, use_bn=True):
+    def __init__(
+        self,
+        kernel_size,
+        in_channels=1,
+        out_channels=1,
+        stride=1,
+        use_refl=True,
+        use_relu=True,
+        use_pad=True,
+        use_bn=True,
+    ):
         super(Conv1DBlock, self).__init__()
 
         self.out_channels = out_channels

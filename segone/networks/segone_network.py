@@ -3,22 +3,19 @@ import time
 import torch
 import torch.nn as nn
 
+from segone.networks.decoders.common_decoder_seg import CommonSegDecoder
 from segone.networks.decoders.segone_decoder_cla import ClaDecoder
+
 # from segone.networks.decoders.segone_decoder_seg import SegDecoder
 from segone.networks.decoders.segone_decoder_seg2 import SegDecoder
 from segone.networks.encoders.segone_encoder import OneEncoder
-from segone.networks.decoders.common_decoder_seg import CommonSegDecoder
 
 
-class SegOne(nn.Module):   
+class SegOne(nn.Module):
 
     model_types = {
-        "SEGONE": {
-            "segmentation": SegDecoder, "classification": ClaDecoder
-        },
-        "ONENET": {
-            "segmentation": CommonSegDecoder, "classification": ClaDecoder
-        }
+        "SEGONE": {"segmentation": SegDecoder, "classification": ClaDecoder},
+        "ONENET": {"segmentation": CommonSegDecoder, "classification": ClaDecoder},
     }
 
     def __init__(self, opts):
@@ -29,7 +26,9 @@ class SegOne(nn.Module):
         assert self.opts["type"] in self.model_types[self.opts["name"]]
 
         self.encoder = OneEncoder(self.opts)
-        self.decoder = self.model_types[self.opts["name"]][self.opts["type"]](self.opts, channel_enc=self.encoder.get_channels())
+        self.decoder = self.model_types[self.opts["name"]][self.opts["type"]](
+            self.opts, channel_enc=self.encoder.get_channels()
+        )
 
     def forward(self, x):
         # torch.cuda.synchronize()

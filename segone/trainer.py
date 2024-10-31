@@ -2,7 +2,8 @@ import os
 import time
 
 import matplotlib.pyplot as plt
-plt.switch_backend('agg')
+
+plt.switch_backend("agg")
 
 import torch
 import torch.nn as nn
@@ -255,7 +256,8 @@ class Trainer:
         cmap = plt.get_cmap("viridis", self.model_opts["channel_out"])
         for i in range(2):
             for j in range(2):
-                if len(images) <= i * 2 + j: break
+                if len(images) <= i * 2 + j:
+                    break
                 axs[i, j * 3].imshow(images[i * 2 + j])
                 axs[i, j * 3 + 1].imshow(targets[i * 2 + j], cmap=cmap, vmin=0, vmax=self.model_opts["channel_out"])
                 axs[i, j * 3 + 2].imshow(masks[i * 2 + j], cmap=cmap, vmin=0, vmax=self.model_opts["channel_out"])
@@ -276,4 +278,3 @@ class Trainer:
             os.path.join(self.save_dir, "images", f"{self.epoch}.png"), dpi=1600, bbox_inches="tight", pad_inches=0
         )
         plt.close(fig)
-

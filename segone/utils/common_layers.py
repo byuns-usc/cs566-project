@@ -7,10 +7,7 @@ class Bottleneck(nn.Module):
         super(Bottleneck, self).__init__()
 
         self.blocks = nn.ModuleList(
-            [
-                ConvBlock(channel_in if i == 0 else channel_out, channel_out)
-                for i in range(repeat)
-            ]
+            [ConvBlock(channel_in if i == 0 else channel_out, channel_out) for i in range(repeat)]
         )
 
     def forward(self, x):
@@ -36,9 +33,11 @@ class ConvBlock(nn.Module):
     def forward(self, x):
         x = self.conv(x)
         if self.use_relu:
-            if self.bn_first: x = self.bn(x)
+            if self.bn_first:
+                x = self.bn(x)
             x = self.relu(x)
-            if not self.bn_first: x = self.bn(x)
+            if not self.bn_first:
+                x = self.bn(x)
         return x
 
 
@@ -70,7 +69,7 @@ class UpSample(nn.Module):
     def forward(self, x):
         x = self.conv(x)
         return x
-    
+
 
 def upsample(x):
     """Upsample input tensor by a factor of 2"""
