@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from segone.utils.common_layers import Conv3x3, ConvBlock, upsample, UpSample
+from segone.utils.common_layers import Conv3x3, ConvBlock, UpSample, upsample
 
 
 class CommonSegDecoder(nn.Module):
@@ -16,19 +16,16 @@ class CommonSegDecoder(nn.Module):
         self.last_layer = -1 if self.opts["name"] == "RESNET" else 0
         self.convs = nn.ModuleDict()
         for i in range(self.len_ch_enc - 1, self.last_layer, -1):
-            self.convs[f"up_{i}"] = UpSample(
-                self.channel_enc[i], 
-                self.channel_enc[i - 1 if i > 0 else 0]
-            )
+            self.convs[f"up_{i}"] = UpSample(self.channel_enc[i], self.channel_enc[i - 1 if i > 0 else 0])
             self.convs[f"channel_1_{i}"] = ConvBlock(
-                self.channel_enc[i - 1 if i > 0 else 0] * (2 if i > 0 else 1), 
+                self.channel_enc[i - 1 if i > 0 else 0] * (2 if i > 0 else 1),
                 self.channel_enc[i - 1 if i > 0 else 0],
-                use_relu = i>self.last_layer+1
+                use_relu=i > self.last_layer + 1,
             )
             self.convs[f"channel_2_{i}"] = ConvBlock(
-                self.channel_enc[i - 1 if i > 0 else 0], 
                 self.channel_enc[i - 1 if i > 0 else 0],
-                use_relu = i>self.last_layer+1
+                self.channel_enc[i - 1 if i > 0 else 0],
+                use_relu=i > self.last_layer + 1,
             )
             self.convs[f"head_{i}"] = Conv3x3(self.channel_enc[i - 1 if i > 0 else 0], self.opts["channel_out"])
 
