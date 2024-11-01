@@ -3,7 +3,7 @@ model:
   type: segmentation
   channel_in: 3
   channel_out: 38
-  num_layers: 34
+  num_layers: 50
   kernel_size: 4
   pool_kernel_size: 4
   bottleneck_scale: 1
