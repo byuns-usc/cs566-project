@@ -1,18 +1,18 @@
 model:
-  name: ONENET
+  name: SEGONE
   type: segmentation
   channel_in: 3
-  channel_out: 4
+  channel_out: 21
   num_layers: 4
   kernel_size: 9
   bottleneck_repeat: 2
   bottleneck_channel: 64
 
 data:
-  name: BRAIN
-  datapath: data/msd_brain
+  name: VOC
+  datapath: data/voc
   train: train
-  val: train
+  val: val
   resolution:
     - 256
     - 256
@@ -22,7 +22,7 @@ train:
   epoch: 200
   learning_rate: 0.0001
   lr_step: 20
-  batch_size: 16
+  batch_size: 32
   num_workers: 4
   save_dir: exps
   load_weights: null

@@ -3,12 +3,7 @@ model:
   type: segmentation
   channel_in: 3
   channel_out: 4
-  num_layers: 34
-  kernel_size: 4
-  pool_kernel_size: 4
-  bottleneck_scale: 1
-  bottleneck_repeat: 2
-  bottleneck_channel: 32
+  num_layers: 50
 
 data:
   name: HEART

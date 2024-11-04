@@ -4,11 +4,6 @@ model:
   channel_in: 3
   channel_out: 38
   num_layers: 50
-  kernel_size: 4
-  pool_kernel_size: 4
-  bottleneck_scale: 1
-  bottleneck_repeat: 2
-  bottleneck_channel: 32
 
 data:
   name: PET

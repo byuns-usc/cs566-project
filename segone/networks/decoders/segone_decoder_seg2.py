@@ -32,20 +32,20 @@ class SegDecoder(nn.Module):
             self.convs[f"spatial_{i}"] = Conv1DBlock(kernel_size=self.opts["kernel_size"])
             self.convs[f"channel_1_{i}"] = Conv1DBlock(
                 kernel_size=2 * self.channel_enc[i - 1] if i > 1 else self.channel_enc[i - 1],
-                out_channels=2 * self.channel_enc[i - 1],
+                out_channels=2 * self.channel_enc[i - 1] if i > 1 else self.channel_enc[i - 1],
                 stride=2 * self.channel_enc[i - 1] if i > 1 else self.channel_enc[i - 1],
                 use_pad=False,
             )
             self.convs[f"channel_2_{i}"] = Conv1DBlock(
                 kernel_size=1,
-                in_channels=2 * self.channel_enc[i - 1],
-                out_channels=2 * self.channel_enc[i - 1],
+                in_channels=2 * self.channel_enc[i - 1] if i > 1 else self.channel_enc[i - 1],
+                out_channels=2 * self.channel_enc[i - 1] if i > 1 else self.channel_enc[i - 1],
                 stride=1,
                 use_pad=False,
             )
             self.convs[f"head_{i}"] = Conv1DBlock(
                 kernel_size=1,
-                in_channels=2 * self.channel_enc[i - 1],
+                in_channels=2 * self.channel_enc[i - 1] if i > 1 else self.channel_enc[i - 1],
                 out_channels=self.opts["channel_out"],
                 stride=1,
                 use_relu=False,
@@ -64,7 +64,7 @@ class SegDecoder(nn.Module):
         x = channel_recover(x, h, w)
         for i in range(self.len_ch_enc - 1, 0, -1):
             x = [self.upsample(x)]
-            if i > 1:
+            if i > 1:   # play with 0/1
                 x += [features_enc[i - 1]]
             x = torch.cat(x, 1)
             x, (_, _, h, w) = spatial_flatten(x)

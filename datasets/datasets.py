@@ -723,11 +723,11 @@ def main():
     os.makedirs("data", exist_ok=True)
     os.chdir("data")
     # COCO()
-    VOC()
-    PET()
+    # VOC()
+    # PET()
     PET2()
-    HEART()
-    BRAIN()
+    # HEART()
+    # BRAIN()
 
 
 if __name__ == "__main__":
