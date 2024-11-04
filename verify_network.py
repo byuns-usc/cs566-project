@@ -8,84 +8,84 @@ from segone.networks.common_network import CommonNet
 from segone.networks.segone_network import SegOne
 
 tests = [
-(
-    "OneNet_e,4 Segmentation",
-    SegOne,
-    {
-        "name": "ONENET",
-        "type": "segmentation",
-        "channel_in": 3,
-        "channel_out": 4,
-        "num_layers": 4,
-        "bottleneck_scale": 1,
-        "bottleneck_repeat": 3,
-        "bottleneck_channel": 64,
-        "kernel_size": 9,
-    }
-),
-(
-    "OneNet_ed,4 Segmentation",
-    SegOne,
-    {
-        "name": "SEGONE",
-        "type": "segmentation",
-        "channel_in": 3,
-        "channel_out": 4,
-        "num_layers": 4,
-        "bottleneck_scale": 1,
-        "bottleneck_repeat": 3,
-        "bottleneck_channel": 64,
-        "kernel_size": 9,
-    }
-),
-(
-    "Resnet34 Segmentation",
-    CommonNet,
-    {
-        "name": "RESNET",
-        "type": "segmentation",
-        "channel_in": 3,
-        "channel_out": 4,
-        "num_layers": 34,
-    }
-),
-(
-    "Resnet50 Segmentation",
-    CommonNet,
-    {
-        "name": "RESNET",
-        "type": "segmentation",
-        "channel_in": 3,
-        "channel_out": 4,
-        "num_layers": 50,
-    }
-),
-(
-    "UNet_4 Segmentation",
-    CommonNet,
-    {
-        "name": "UNET",
-        "type": "segmentation",
-        "channel_in": 3,
-        "channel_out": 4,
-        "num_layers": 4,
-        "bottleneck_repeat": 2,
-        "bottleneck_channel": 64,
-    }
-),
-(
-    "MobileNet Segmentation",
-    CommonNet,
-    {
-        "name": "MOBILENET",
-        "type": "segmentation",
-        "channel_in": 3,
-        "channel_out": 4,
-        "num_layers": 4,
-        "bottleneck_repeat": 3,
-        "bottleneck_channel": 64,
-    }
-),
+    (
+        "OneNet_e,4 Segmentation",
+        SegOne,
+        {
+            "name": "ONENET",
+            "type": "segmentation",
+            "channel_in": 3,
+            "channel_out": 4,
+            "num_layers": 4,
+            "bottleneck_scale": 1,
+            "bottleneck_repeat": 3,
+            "bottleneck_channel": 64,
+            "kernel_size": 9,
+        },
+    ),
+    (
+        "OneNet_ed,4 Segmentation",
+        SegOne,
+        {
+            "name": "SEGONE",
+            "type": "segmentation",
+            "channel_in": 3,
+            "channel_out": 4,
+            "num_layers": 4,
+            "bottleneck_scale": 1,
+            "bottleneck_repeat": 3,
+            "bottleneck_channel": 64,
+            "kernel_size": 9,
+        },
+    ),
+    (
+        "Resnet34 Segmentation",
+        CommonNet,
+        {
+            "name": "RESNET",
+            "type": "segmentation",
+            "channel_in": 3,
+            "channel_out": 4,
+            "num_layers": 34,
+        },
+    ),
+    (
+        "Resnet50 Segmentation",
+        CommonNet,
+        {
+            "name": "RESNET",
+            "type": "segmentation",
+            "channel_in": 3,
+            "channel_out": 4,
+            "num_layers": 50,
+        },
+    ),
+    (
+        "UNet_4 Segmentation",
+        CommonNet,
+        {
+            "name": "UNET",
+            "type": "segmentation",
+            "channel_in": 3,
+            "channel_out": 4,
+            "num_layers": 4,
+            "bottleneck_repeat": 2,
+            "bottleneck_channel": 64,
+        },
+    ),
+    (
+        "MobileNet Segmentation",
+        CommonNet,
+        {
+            "name": "MOBILENET",
+            "type": "segmentation",
+            "channel_in": 3,
+            "channel_out": 4,
+            "num_layers": 4,
+            "bottleneck_repeat": 3,
+            "bottleneck_channel": 64,
+        },
+    ),
 ]
 
 
@@ -98,7 +98,7 @@ if __name__ == "__main__":
 
     device = f"cuda:{args.cuda}" if args.cuda > -1 else "cpu"
 
-    input_size=(1,3,256,256)
+    input_size = (1, 3, 256, 256)
 
     for model_name, model_type, opts in tests:
         print(model_name)
