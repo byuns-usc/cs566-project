@@ -27,6 +27,8 @@ python-dateutil
 pytz
 ruamel.yaml
 requests
+scikit-image
+scikit-learn
 setuptools
 six
 sympy
