@@ -1,0 +1,19 @@
+# segone/config/config.yaml
+
+datasets:
+  coco:
+    enabled: true
+    annotations_url: http://images.cocodataset.org/annotations/annotations_trainval2017.zip
+  voc:
+    enabled: true
+    year: 2012
+  pet:
+    enabled: true
+  heart:
+    enabled: true
+    url: https://msd-for-monai.s3-us-west-2.amazonaws.com/Task02_Heart.tar
+  brain:
+    enabled: true
+    url: https://msd-for-monai.s3-us-west-2.amazonaws.com/Task01_BrainTumour.tar
+
+output_dir: data
