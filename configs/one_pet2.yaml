@@ -2,17 +2,17 @@ model:
   name: ONENET
   type: segmentation
   channel_in: 3
-  channel_out: 4
+  channel_out: 3
   num_layers: 4
   kernel_size: 9
   bottleneck_repeat: 2
   bottleneck_channel: 64
 
 data:
-  name: BRAIN
-  datapath: data/msd_brain
+  name: PET2
+  datapath: data/oxford_pet2
   train: train
-  val: train
+  val: val
   resolution:
     - 256
     - 256

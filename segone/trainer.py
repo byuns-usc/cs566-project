@@ -18,13 +18,15 @@ from segone.networks.segone_network import SegOne
 
 
 class Trainer:
-    available_datasets = ("COCO", "VOC", "PET", "BRAIN", "HEART")
+    available_datasets = ("COCO", "VOC", "PET", "PET2", "BRAIN", "HEART")
     available_models = {
         "SEGONE": SegOne,
+        "ONENET": SegOne,
         "RESNET": CommonNet,
         "UNET": CommonNet,
-        "SKIPINIT": CommonNet,
-        "EUNNET": CommonNet,
+        "MOBILENET": CommonNet,
+        # "SKIPINIT": CommonNet,
+        # "EUNNET": CommonNet,
     }
 
     def __init__(self, opts, cuda):

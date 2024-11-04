@@ -2,8 +2,6 @@ import numpy as np
 import torch.nn as nn
 from torchvision.models.resnet import ResNet18_Weights, ResNet34_Weights, ResNet50_Weights, resnet18, resnet34, resnet50
 
-from segone.utils.common_layers import Bottleneck, ConvBlock
-
 
 class ResNetEncoder(nn.Module):
     """Resnet 18/34/50 backbone encoder"""

@@ -4,9 +4,6 @@ model:
   channel_in: 3
   channel_out: 4
   num_layers: 4
-  kernel_size: 3
-  pool_kernel_size: 3
-  bottleneck_scale: 1
   bottleneck_repeat: 2
   bottleneck_channel: 64
 
