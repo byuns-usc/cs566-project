@@ -1,11 +1,10 @@
 model:
-  name: ONENET
+  name: MOBILENET
   type: segmentation
   channel_in: 3
   channel_out: 3
   num_layers: 4
-  kernel_size: 9
-  bottleneck_repeat: 2
+  bottleneck_repeat: 3
   bottleneck_channel: 64
 
 data:

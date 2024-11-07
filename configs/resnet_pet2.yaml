@@ -3,7 +3,7 @@ model:
   type: segmentation
   channel_in: 3
   channel_out: 3
-  num_layers: 50
+  num_layers: 34
 
 data:
   name: PET2

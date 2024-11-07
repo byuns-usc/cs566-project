@@ -1,16 +1,15 @@
 model:
-  name: ONENET
+  name: MOBILENET
   type: segmentation
   channel_in: 3
-  channel_out: 3
+  channel_out: 21
   num_layers: 4
-  kernel_size: 9
-  bottleneck_repeat: 2
+  bottleneck_repeat: 3
   bottleneck_channel: 64
 
 data:
-  name: PET2
-  datapath: data/oxford_pet2
+  name: VOC
+  datapath: data/voc
   train: train
   val: val
   resolution:
@@ -30,3 +29,4 @@ train:
   load_encoder: null
   save_frequency: 5
   patience: 5
+  

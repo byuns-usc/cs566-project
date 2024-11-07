@@ -22,7 +22,7 @@ train:
   epoch: 200
   learning_rate: 0.0001
   lr_step: 20
-  batch_size: 16
+  batch_size: 32
   num_workers: 4
   save_dir: exps
   load_weights: null

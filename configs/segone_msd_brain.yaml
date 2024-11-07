@@ -12,7 +12,7 @@ data:
   name: BRAIN
   datapath: data/msd_brain
   train: train
-  val: val
+  val: train
   resolution:
     - 256
     - 256
