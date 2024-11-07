@@ -64,7 +64,7 @@ class SegDecoder(nn.Module):
         x = channel_recover(x, h, w)
         for i in range(self.len_ch_enc - 1, 0, -1):
             x = [self.upsample(x)]
-            if i > 1:   # play with 0/1
+            if i > 1:  # play with 0/1
                 x += [features_enc[i - 1]]
             x = torch.cat(x, 1)
             x, (_, _, h, w) = spatial_flatten(x)
