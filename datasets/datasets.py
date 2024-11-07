@@ -718,6 +718,7 @@ def BRAIN():
     save_label_mappings(output_dir_train_masks, MASK_LABELS_BRAIN, "Train")
     print("MSD Brain labels.")
 
+
 def process_lung_train(image_paths, mask_paths, output_dir_train_images, output_dir_train_masks):
     os.makedirs(output_dir_train_images, exist_ok=True)
     os.makedirs(output_dir_train_masks, exist_ok=True)
@@ -747,6 +748,7 @@ def process_lung_train(image_paths, mask_paths, output_dir_train_images, output_
 
     print("MSD Lung train CT images and masks (mid 50% slices) have been saved!")
 
+
 def process_lung_test(image_paths, output_dir_test_images):
     os.makedirs(output_dir_test_images, exist_ok=True)
 
@@ -764,6 +766,7 @@ def process_lung_test(image_paths, output_dir_test_images):
             img_pil.save(os.path.join(output_dir_test_images, f"test_{idx}_{slice_idx}.jpg"))
 
     print("MSD Lung test CT images (all slices) have been saved!")
+
 
 def LUNG():
     base_dir = "msd_lung"
@@ -795,19 +798,28 @@ def LUNG():
     image_dir = os.path.join(output_dir_nifti, "Task06_Lung", "imagesTr")
     mask_dir = os.path.join(output_dir_nifti, "Task06_Lung", "labelsTr")
 
-    image_paths = sorted([os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith(".nii.gz") and not f.startswith("._")])
-    mask_paths = sorted([os.path.join(mask_dir, f) for f in os.listdir(mask_dir) if f.endswith(".nii.gz") and not f.startswith("._")])
+    image_paths = sorted(
+        [os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith(".nii.gz") and not f.startswith("._")]
+    )
+    mask_paths = sorted(
+        [os.path.join(mask_dir, f) for f in os.listdir(mask_dir) if f.endswith(".nii.gz") and not f.startswith("._")]
+    )
 
     process_lung_train(image_paths, mask_paths, output_dir_train_images, output_dir_train_masks)
 
     image_dir_test = os.path.join(output_dir_nifti, "Task06_Lung", "imagesTs")
-    image_paths_test = sorted([os.path.join(image_dir_test, f) for f in os.listdir(image_dir_test) if f.endswith(".nii.gz") and not f.startswith("._")])
+    image_paths_test = sorted(
+        [
+            os.path.join(image_dir_test, f)
+            for f in os.listdir(image_dir_test)
+            if f.endswith(".nii.gz") and not f.startswith("._")
+        ]
+    )
 
     process_lung_test(image_paths_test, output_dir_test_images)
 
     MASK_LABELS_LUNG = {"background": 0, "lung tumor": 1}
     save_label_mappings(output_dir_train_masks, MASK_LABELS_LUNG, "Train")
-
 
 
 def main():
