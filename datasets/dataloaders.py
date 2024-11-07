@@ -188,6 +188,12 @@ if __name__ == "__main__":
 
     lung_loader_test = create_dataloader(lung_root_dir, "LUNG", split="test", img_size=fixed_size)
 
+    # MSD Spleen Dataset Loaders
+    spleen_root_dir = "msd_spleen"
+    spleen_loader_train = create_dataloader(spleen_root_dir, "SPLEEN", split="train", img_size=fixed_size)
+
+    spleen_loader_test = create_dataloader(spleen_root_dir, "SPLEEN", split="test", img_size=fixed_size)
+
     # Verifying the Dataloader Outputs
     def verify_dataloader(dataloader, name, num_samples=4):
         for batch in dataloader:
@@ -216,3 +222,5 @@ if __name__ == "__main__":
     verify_dataloader(heart_loader_test, "MSD Heart Test")
     verify_dataloader(lung_loader_train, "MSD Lung Train")
     verify_dataloader(lung_loader_test, "MSD Lung Test")
+    verify_dataloader(spleen_loader_train, "MSD Spleen Train")
+    verify_dataloader(spleen_loader_test, "MSD Spleen Test")
