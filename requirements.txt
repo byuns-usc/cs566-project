@@ -36,6 +36,7 @@ tensorboardX
 torch
 torchinfo
 torchmetrics
+torchmetrics[detection]
 torchvision
 tqdm
 typing_extensions
