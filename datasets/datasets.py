@@ -718,6 +718,97 @@ def BRAIN():
     save_label_mappings(output_dir_train_masks, MASK_LABELS_BRAIN, "Train")
     print("MSD Brain labels.")
 
+def process_lung_train(image_paths, mask_paths, output_dir_train_images, output_dir_train_masks):
+    os.makedirs(output_dir_train_images, exist_ok=True)
+    os.makedirs(output_dir_train_masks, exist_ok=True)
+
+    for idx, (img_path, mask_path) in enumerate(zip(image_paths, mask_paths)):
+        img_nifti = nib.load(img_path)
+        mask_nifti = nib.load(mask_path)
+
+        img_data = img_nifti.get_fdata()
+        mask_data = mask_nifti.get_fdata()
+
+        lower_bound = int(img_data.shape[2] * 0.35)
+        upper_bound = int(img_data.shape[2] * 0.85)
+
+        for slice_idx in range(lower_bound, upper_bound):
+            img_slice = img_data[:, :, slice_idx]
+            mask_slice = mask_data[:, :, slice_idx]
+
+            img_normalized = (img_slice - img_slice.min()) / (img_slice.max() - img_slice.min()) * 255
+            img_normalized = img_normalized.astype(np.uint8)
+            img_pil = Image.fromarray(img_normalized)
+
+            img_pil.save(os.path.join(output_dir_train_images, f"train_{idx}_{slice_idx}.jpg"))
+            mask_path = os.path.join(output_dir_train_masks, f"train_{idx}_{slice_idx}.npy")
+            np.save(mask_path, mask_slice)
+            print(np.unique(mask_slice))
+
+    print("MSD Lung train CT images and masks (mid 50% slices) have been saved!")
+
+def process_lung_test(image_paths, output_dir_test_images):
+    os.makedirs(output_dir_test_images, exist_ok=True)
+
+    for idx, img_path in enumerate(image_paths):
+        img_nifti = nib.load(img_path)
+        img_data = img_nifti.get_fdata()
+
+        for slice_idx in range(img_data.shape[2]):
+            img_slice = img_data[:, :, slice_idx]
+
+            img_normalized = (img_slice - img_slice.min()) / (img_slice.max() - img_slice.min()) * 255
+            img_normalized = img_normalized.astype(np.uint8)
+            img_pil = Image.fromarray(img_normalized)
+
+            img_pil.save(os.path.join(output_dir_test_images, f"test_{idx}_{slice_idx}.jpg"))
+
+    print("MSD Lung test CT images (all slices) have been saved!")
+
+def LUNG():
+    base_dir = "msd_lung"
+    output_dir_train_images = os.path.join(base_dir, "train", "images")
+    output_dir_train_masks = os.path.join(base_dir, "train", "masks")
+    output_dir_test_images = os.path.join(base_dir, "test", "images")
+    output_dir_nifti = os.path.join(base_dir, "nifti")
+
+    os.makedirs(output_dir_train_images, exist_ok=True)
+    os.makedirs(output_dir_train_masks, exist_ok=True)
+    os.makedirs(output_dir_test_images, exist_ok=True)
+    os.makedirs(output_dir_nifti, exist_ok=True)
+
+    msd_lung_url = "https://msd-for-monai.s3-us-west-2.amazonaws.com/Task06_Lung.tar"
+    msd_tar_path = "Task06_Lung.tar"
+
+    if not os.path.exists(msd_tar_path):
+        print("Downloading MSD Lung dataset...")
+        with requests.get(msd_lung_url, stream=True) as response:
+            response.raise_for_status()
+            with open(msd_tar_path, "wb") as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+
+    print("Extracting the dataset...")
+    with tarfile.open(msd_tar_path, "r") as tar:
+        tar.extractall(output_dir_nifti)
+
+    image_dir = os.path.join(output_dir_nifti, "Task06_Lung", "imagesTr")
+    mask_dir = os.path.join(output_dir_nifti, "Task06_Lung", "labelsTr")
+
+    image_paths = sorted([os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith(".nii.gz") and not f.startswith("._")])
+    mask_paths = sorted([os.path.join(mask_dir, f) for f in os.listdir(mask_dir) if f.endswith(".nii.gz") and not f.startswith("._")])
+
+    process_lung_train(image_paths, mask_paths, output_dir_train_images, output_dir_train_masks)
+
+    image_dir_test = os.path.join(output_dir_nifti, "Task06_Lung", "imagesTs")
+    image_paths_test = sorted([os.path.join(image_dir_test, f) for f in os.listdir(image_dir_test) if f.endswith(".nii.gz") and not f.startswith("._")])
+
+    process_lung_test(image_paths_test, output_dir_test_images)
+
+    MASK_LABELS_LUNG = {"background": 0, "lung tumor": 1}
+    save_label_mappings(output_dir_train_masks, MASK_LABELS_LUNG, "Train")
+
+
 
 def main():
     os.makedirs("data", exist_ok=True)
@@ -728,6 +819,7 @@ def main():
     PET2()
     # HEART()
     # BRAIN()
+    LUNG()
 
 
 if __name__ == "__main__":
