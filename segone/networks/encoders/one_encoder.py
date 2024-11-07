@@ -22,7 +22,7 @@ class Bottleneck(nn.Module):
             [
                 Conv1DBlock(
                     kernel_size=in_channels if i == 0 else 1,
-                    in_channels=1 if i==0 else out_channels,
+                    in_channels=1 if i == 0 else out_channels,
                     out_channels=out_channels,
                     stride=in_channels if i == 0 else 1,
                     use_pad=False,

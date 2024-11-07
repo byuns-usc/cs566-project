@@ -1,9 +1,9 @@
 import torch.nn as nn
 
 from segone.networks.decoders.common_decoder_seg import CommonSegDecoder
+from segone.networks.encoders.mobilenet_encoder import MobileNetEncoder
 from segone.networks.encoders.resnet_encoder import ResNetEncoder
 from segone.networks.encoders.unet_encoder import UNetEncoder
-from segone.networks.encoders.mobilenet_encoder import MobileNetEncoder
 
 
 class CommonNet(nn.Module):

@@ -14,7 +14,7 @@ class CommonSegDecoder(nn.Module):
 
         # Initialize Layers
         self.last_layer = -1 if self.opts["name"] == "RESNET" else 0
-        self.skip_stop = self.last_layer+1 if self.opts["name"] == "RESNET" else self.last_layer+1
+        self.skip_stop = self.last_layer + 1 if self.opts["name"] == "RESNET" else self.last_layer + 1
 
         self.convs = nn.ModuleDict()
         for i in range(self.len_ch_enc - 1, self.last_layer, -1):
@@ -29,7 +29,9 @@ class CommonSegDecoder(nn.Module):
                 self.channel_enc[i - 1 if i > self.skip_stop else 0],
                 use_relu=i > self.last_layer + 1,
             )
-            self.convs[f"head_{i}"] = Conv3x3(self.channel_enc[i - 1 if i > self.skip_stop else 0], self.opts["channel_out"])
+            self.convs[f"head_{i}"] = Conv3x3(
+                self.channel_enc[i - 1 if i > self.skip_stop else 0], self.opts["channel_out"]
+            )
 
     def forward(self, features_enc):
         self.outputs = []
@@ -43,7 +45,7 @@ class CommonSegDecoder(nn.Module):
             x = torch.cat(x, 1)
             x = self.convs[f"channel_1_{i}"](x)
             x = self.convs[f"channel_2_{i}"](x)
-            if i==self.last_layer+1:
+            if i == self.last_layer + 1:
                 self.outputs.append(self.convs[f"head_{i}"](x))
 
         return self.outputs
