@@ -820,6 +820,7 @@ def LUNG():
     MASK_LABELS_LUNG = {"background": 0, "lung tumor": 1}
     save_label_mappings(output_dir_train_masks, MASK_LABELS_LUNG, "Train")
 
+
 def process_spleen_train(image_paths, mask_paths, output_dir_train_images, output_dir_train_masks):
     os.makedirs(output_dir_train_images, exist_ok=True)
     os.makedirs(output_dir_train_masks, exist_ok=True)
@@ -848,6 +849,7 @@ def process_spleen_train(image_paths, mask_paths, output_dir_train_images, outpu
 
     print("MSD Spleen train CT images and masks (mid 50% slices) have been saved!")
 
+
 def process_spleen_test(image_paths, output_dir_test_images):
     os.makedirs(output_dir_test_images, exist_ok=True)
 
@@ -865,6 +867,7 @@ def process_spleen_test(image_paths, output_dir_test_images):
             img_pil.save(os.path.join(output_dir_test_images, f"test_{idx}_{slice_idx}.jpg"))
 
     print("MSD Spleen test CT images (all slices) have been saved!")
+
 
 def SPLEEN():
     base_dir = "msd_spleen"
@@ -896,19 +899,28 @@ def SPLEEN():
     image_dir = os.path.join(output_dir_nifti, "Task09_Spleen", "imagesTr")
     mask_dir = os.path.join(output_dir_nifti, "Task09_Spleen", "labelsTr")
 
-    image_paths = sorted([os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith(".nii.gz") and not f.startswith("._")])
-    mask_paths = sorted([os.path.join(mask_dir, f) for f in os.listdir(mask_dir) if f.endswith(".nii.gz") and not f.startswith("._")])
+    image_paths = sorted(
+        [os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith(".nii.gz") and not f.startswith("._")]
+    )
+    mask_paths = sorted(
+        [os.path.join(mask_dir, f) for f in os.listdir(mask_dir) if f.endswith(".nii.gz") and not f.startswith("._")]
+    )
 
     process_spleen_train(image_paths, mask_paths, output_dir_train_images, output_dir_train_masks)
 
     image_dir_test = os.path.join(output_dir_nifti, "Task09_Spleen", "imagesTs")
-    image_paths_test = sorted([os.path.join(image_dir_test, f) for f in os.listdir(image_dir_test) if f.endswith(".nii.gz") and not f.startswith("._")])
+    image_paths_test = sorted(
+        [
+            os.path.join(image_dir_test, f)
+            for f in os.listdir(image_dir_test)
+            if f.endswith(".nii.gz") and not f.startswith("._")
+        ]
+    )
 
     process_spleen_test(image_paths_test, output_dir_test_images)
 
     MASK_LABELS_SPLEEN = {"background": 0, "spleen": 1}
     save_label_mappings(output_dir_train_masks, MASK_LABELS_SPLEEN, "Train")
-
 
 
 def main():
