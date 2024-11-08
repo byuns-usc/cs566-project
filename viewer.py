@@ -1,8 +1,6 @@
 import argparse
-import os
 
 import matplotlib.pyplot as plt
-import numpy as np
 import torch
 from ruamel.yaml import YAML
 
