@@ -16,6 +16,8 @@ mypy-extensions
 networkx
 nibabel
 numpy<2
+opencv-python
+opencv-contrib-python
 packaging
 pandas
 pathspec
@@ -36,6 +38,7 @@ tensorboardX
 torch
 torchinfo
 torchmetrics
+torchmetrics[detection]
 torchvision
 tqdm
 typing_extensions

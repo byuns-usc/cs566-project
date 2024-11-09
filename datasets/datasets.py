@@ -744,7 +744,6 @@ def process_lung_train(image_paths, mask_paths, output_dir_train_images, output_
             img_pil.save(os.path.join(output_dir_train_images, f"train_{idx}_{slice_idx}.jpg"))
             mask_path = os.path.join(output_dir_train_masks, f"train_{idx}_{slice_idx}.npy")
             np.save(mask_path, mask_slice)
-            print(np.unique(mask_slice))
 
     print("MSD Lung train CT images and masks (mid 50% slices) have been saved!")
 
@@ -822,6 +821,108 @@ def LUNG():
     save_label_mappings(output_dir_train_masks, MASK_LABELS_LUNG, "Train")
 
 
+def process_spleen_train(image_paths, mask_paths, output_dir_train_images, output_dir_train_masks):
+    os.makedirs(output_dir_train_images, exist_ok=True)
+    os.makedirs(output_dir_train_masks, exist_ok=True)
+
+    for idx, (img_path, mask_path) in enumerate(zip(image_paths, mask_paths)):
+        img_nifti = nib.load(img_path)
+        mask_nifti = nib.load(mask_path)
+
+        img_data = img_nifti.get_fdata()
+        mask_data = mask_nifti.get_fdata()
+
+        lower_bound = int(img_data.shape[2] * 0)
+        upper_bound = int(img_data.shape[2] * 1)
+
+        for slice_idx in range(lower_bound, upper_bound):
+            img_slice = img_data[:, :, slice_idx]
+            mask_slice = mask_data[:, :, slice_idx]
+
+            img_normalized = (img_slice - img_slice.min()) / (img_slice.max() - img_slice.min()) * 255
+            img_normalized = img_normalized.astype(np.uint8)
+            img_pil = Image.fromarray(img_normalized)
+
+            img_pil.save(os.path.join(output_dir_train_images, f"train_{idx}_{slice_idx}.jpg"))
+            mask_path = os.path.join(output_dir_train_masks, f"train_{idx}_{slice_idx}.npy")
+            np.save(mask_path, mask_slice)
+
+    print("MSD Spleen train CT images and masks (mid 50% slices) have been saved!")
+
+
+def process_spleen_test(image_paths, output_dir_test_images):
+    os.makedirs(output_dir_test_images, exist_ok=True)
+
+    for idx, img_path in enumerate(image_paths):
+        img_nifti = nib.load(img_path)
+        img_data = img_nifti.get_fdata()
+
+        for slice_idx in range(img_data.shape[2]):
+            img_slice = img_data[:, :, slice_idx]
+
+            img_normalized = (img_slice - img_slice.min()) / (img_slice.max() - img_slice.min()) * 255
+            img_normalized = img_normalized.astype(np.uint8)
+            img_pil = Image.fromarray(img_normalized)
+
+            img_pil.save(os.path.join(output_dir_test_images, f"test_{idx}_{slice_idx}.jpg"))
+
+    print("MSD Spleen test CT images (all slices) have been saved!")
+
+
+def SPLEEN():
+    base_dir = "msd_spleen"
+    output_dir_train_images = os.path.join(base_dir, "train", "images")
+    output_dir_train_masks = os.path.join(base_dir, "train", "masks")
+    output_dir_test_images = os.path.join(base_dir, "test", "images")
+    output_dir_nifti = os.path.join(base_dir, "nifti")
+
+    os.makedirs(output_dir_train_images, exist_ok=True)
+    os.makedirs(output_dir_train_masks, exist_ok=True)
+    os.makedirs(output_dir_test_images, exist_ok=True)
+    os.makedirs(output_dir_nifti, exist_ok=True)
+
+    msd_spleen_url = "https://msd-for-monai.s3-us-west-2.amazonaws.com/Task09_Spleen.tar"
+    msd_tar_path = "Task09_Spleen.tar"
+
+    if not os.path.exists(msd_tar_path):
+        print("Downloading MSD Spleen dataset...")
+        with requests.get(msd_spleen_url, stream=True) as response:
+            response.raise_for_status()
+            with open(msd_tar_path, "wb") as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+
+    print("Extracting the dataset...")
+    with tarfile.open(msd_tar_path, "r") as tar:
+        tar.extractall(output_dir_nifti)
+
+    image_dir = os.path.join(output_dir_nifti, "Task09_Spleen", "imagesTr")
+    mask_dir = os.path.join(output_dir_nifti, "Task09_Spleen", "labelsTr")
+
+    image_paths = sorted(
+        [os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith(".nii.gz") and not f.startswith("._")]
+    )
+    mask_paths = sorted(
+        [os.path.join(mask_dir, f) for f in os.listdir(mask_dir) if f.endswith(".nii.gz") and not f.startswith("._")]
+    )
+
+    process_spleen_train(image_paths, mask_paths, output_dir_train_images, output_dir_train_masks)
+
+    image_dir_test = os.path.join(output_dir_nifti, "Task09_Spleen", "imagesTs")
+    image_paths_test = sorted(
+        [
+            os.path.join(image_dir_test, f)
+            for f in os.listdir(image_dir_test)
+            if f.endswith(".nii.gz") and not f.startswith("._")
+        ]
+    )
+
+    process_spleen_test(image_paths_test, output_dir_test_images)
+
+    MASK_LABELS_SPLEEN = {"background": 0, "spleen": 1}
+    save_label_mappings(output_dir_train_masks, MASK_LABELS_SPLEEN, "Train")
+
+
 def main():
     os.makedirs("data", exist_ok=True)
     os.chdir("data")
@@ -832,6 +933,7 @@ def main():
     # HEART()
     # BRAIN()
     LUNG()
+    SPLEEN()
 
 
 if __name__ == "__main__":
