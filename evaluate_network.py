@@ -1,15 +1,15 @@
 import argparse
 import os
+from collections import defaultdict
 
 import torch
 from ruamel.yaml import YAML
-from tqdm import tqdm 
-from collections import defaultdict
+from tqdm import tqdm
 
 from datasets.dataloaders import create_dataloader
-from segone.utils.eval import Evaluator
 from segone.networks.common_network import CommonNet
 from segone.networks.segone_network import SegOne
+from segone.utils.eval import Evaluator
 
 available_models = {
     "SEGONE": SegOne,
@@ -18,6 +18,7 @@ available_models = {
     "UNET": CommonNet,
     "MOBILENET": CommonNet,
 }
+
 
 def evaluate_network(cfg, cuda_num):
     # Load options
@@ -70,12 +71,12 @@ def evaluate_network(cfg, cuda_num):
         return results
 
     counter = 0
-    total_results = defaultdict(lambda:0)
+    total_results = defaultdict(lambda: 0)
     with torch.no_grad():
         for inputs in tqdm(val_loader):
             results = process_batch(inputs)
             for metric, value in results.items():
-                if type(value)==torch.Tensor:
+                if type(value) == torch.Tensor:
                     value = float(torch.mean(value))
                 total_results[metric] += value
             counter += 1
@@ -84,7 +85,8 @@ def evaluate_network(cfg, cuda_num):
 
     return total_results
 
-if __name__=='__main__':
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--cfg", type=str, required=True)
     parser.add_argument("--cuda", type=int, default=0)
