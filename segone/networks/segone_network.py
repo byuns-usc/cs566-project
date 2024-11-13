@@ -3,11 +3,9 @@ import time
 import torch
 import torch.nn as nn
 
-
-from segone.networks.decoders.segone_decoder_seg import SegDecoder
-from segone.networks.decoders.segone_decoder_cla import ClaDecoder
-
 from segone.networks.decoders.common_decoder_seg import CommonSegDecoder
+from segone.networks.decoders.segone_decoder_cla import ClaDecoder
+from segone.networks.decoders.segone_decoder_seg import SegDecoder
 from segone.networks.encoders.one_encoder import OneEncoder
 
 # from segone.networks.decoders.common_decoder_seg_4 import CommonSegDecoder

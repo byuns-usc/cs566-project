@@ -18,7 +18,9 @@ class CommonSegDecoder(nn.Module):
 
         self.convs = nn.ModuleDict()
         for i in range(self.len_ch_enc - 1, self.last_layer, -1):
-            self.convs[f"up_{i}"] = UpSample(self.channel_enc[i], self.channel_enc[i - 1 if i > self.skip_stop else 0], scale=4)
+            self.convs[f"up_{i}"] = UpSample(
+                self.channel_enc[i], self.channel_enc[i - 1 if i > self.skip_stop else 0], scale=4
+            )
             self.convs[f"channel_1_{i}"] = ConvBlock(
                 self.channel_enc[i - 1 if i > self.skip_stop else 0] * (2 if i > self.skip_stop else 1),
                 self.channel_enc[i - 1 if i > self.skip_stop else 0],
