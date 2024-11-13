@@ -929,7 +929,7 @@ def main():
     # COCO()
     # VOC()
     # PET()
-    PET2()
+    # PET2()
     # HEART()
     # BRAIN()
     LUNG()

@@ -18,7 +18,7 @@ from segone.networks.segone_network import SegOne
 
 
 class Trainer:
-    available_datasets = ("COCO", "VOC", "PET", "PET2", "BRAIN", "HEART")
+    available_datasets = ("COCO", "VOC", "PET", "PET2", "BRAIN", "HEART", "SPLEEN", "LUNG")
     available_models = {
         "SEGONE": SegOne,
         "ONENET": SegOne,
@@ -170,7 +170,7 @@ class Trainer:
     def val(self):
         self.model.eval()
 
-        if self.data_opts["name"] in ("BRAIN", "HEART"):
+        if self.data_opts["name"] in ("BRAIN", "HEART", "SPLEEN", "LUNG"):
             if self.epoch == 0:
                 self.val_iter = iter(self.val_loader)
             try:

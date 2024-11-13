@@ -62,9 +62,9 @@ class Conv3x3(nn.Module):
 class UpSample(nn.Module):
     """Upsample with ConvTranspose2D"""
 
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, scale=2):
         super(UpSample, self).__init__()
-        self.conv = nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2)
+        self.conv = nn.ConvTranspose2d(in_channels, out_channels, kernel_size=scale, stride=scale)
 
     def forward(self, x):
         x = self.conv(x)
