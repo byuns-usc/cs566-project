@@ -11,7 +11,7 @@ parser.add_argument("--cuda", type=int, default=0)
 args = parser.parse_args()
 
 skips = ("LUNG", "SPLEEN", "OLD", "SKIP", "UNET")
-keyword = ("BRAIN")
+keyword = "BRAIN"
 
 data = defaultdict(lambda: [])
 for folder in os.listdir(args.folder):

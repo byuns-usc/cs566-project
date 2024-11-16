@@ -96,5 +96,5 @@ if __name__ == "__main__":
     for metric, value in results.items():
         print(f"{metric}: {value}")
     for metric, value in results.items():
-        print(value, end=',')
+        print(value, end=",")
     print()
