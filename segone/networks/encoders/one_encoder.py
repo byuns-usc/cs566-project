@@ -60,7 +60,7 @@ class OneEncoder(nn.Module):
         )
         self.convs = nn.ModuleDict()
         for i in range(self.opts["num_layers"]):
-            # self.convs[f"spatial_{i}"] = Conv1DBlock(kernel_size=self.opts["kernel_size"])
+            self.convs[f"spatial_{i}"] = Conv1DBlock(kernel_size=self.opts["kernel_size"])
             self.convs[f"channel_1_{i}"] = Conv1DBlock(
                 kernel_size=2 * self.channels[i + 1],
                 out_channels=self.channels[i + 1],
@@ -97,7 +97,7 @@ class OneEncoder(nn.Module):
         for i in range(self.opts["num_layers"]):
             x = self.downsample(x)
             x, (_, _, h, w) = spatial_flatten(x)
-            # x = self.convs[f"spatial_{i}"](x)
+            x = self.convs[f"spatial_{i}"](x)
             x = self.convs[f"channel_1_{i}"](x)
             x = self.convs[f"channel_2_{i}"](x)
             # x = self.convs[f"channel_3_{i}"](x)

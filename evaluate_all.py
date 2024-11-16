@@ -11,9 +11,13 @@ parser.add_argument("--folder", type=str, required=True)
 parser.add_argument("--cuda", type=int, default=0)
 args = parser.parse_args()
 
+skips = ("LUNG", "SPLEEN", "OLD", "SKIP", "UNET")
+keyword = ("BRAIN")
+
 data = defaultdict(lambda: [])
 for folder in os.listdir(args.folder):
-    if folder[:-4] == "SKIP" or folder[:-3] == "OLD" or "BRAIN" in folder:
+    # if any((s in folder for s in skips)):
+    if not any((s in folder for s in keyword)) or "ONENET_SPATIAL" in folder or "UNET" in folder:
         continue
     try:
         results = evaluate_network(os.path.join(args.folder, folder, 'config.yaml'), args.cuda)

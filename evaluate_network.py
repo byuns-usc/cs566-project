@@ -93,3 +93,6 @@ if __name__=='__main__':
     results = evaluate_network(args.cfg, args.cuda)
     for metric, value in results.items():
         print(f"{metric}: {value}")
+    for metric, value in results.items():
+        print(value, end=',')
+    print()
